@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import "./App.css";
 
 /** 大樓清單（代碼＋名稱＋示例教室） */
@@ -124,6 +125,8 @@ export default function ClassroomBooking() {
   const [q, setQ] = useState("");
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
+
+  const navigate = useNavigate();
 
   // 前端暫存：每間教室的已占用時段（模擬後端）
   const [occupiedMap, setOccupiedMap] = useState(PRESET_OCCUPIED);
@@ -263,13 +266,7 @@ export default function ClassroomBooking() {
       {/* 右側 */}
       <section className="cb-main">
         <div className="cb-hero">
-          <button
-            className="cb-login-btn"
-            onClick={() => setShowLogin((v) => !v)}
-            aria-pressed={showLogin}
-          >
-            {showLogin ? "返回" : "登入"}
-          </button>
+          <button className="cb-login-btn" onClick={() => navigate("/login")}>登入</button>
         </div>
 
         <div className="cb-card">
