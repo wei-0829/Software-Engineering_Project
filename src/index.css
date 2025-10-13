@@ -1,0 +1,14 @@
+/* 取消 Vite 模板對 #root 的限制，讓版面可滿寬 */
+html, body, #root {
+  height: 100%;
+}
+
+#root {
+  max-width: none;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  text-align: initial;
+}
+
+/* 可保留你的其他全域樣式 */

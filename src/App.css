@@ -1,0 +1,182 @@
+/* ============ 基礎 ============ */
+:root {
+  --sidebar-w: 350px;
+  --hero-h: 220px;
+  --radius: 10px;
+  --shadow: 0 10px 25px rgba(0,0,0,.12);
+  --border: #e9ecef;
+  --text: #2b2b2b;
+}
+
+* { box-sizing: border-box; }
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+  background: #f5f7fb; /* 右圖淺灰底 */
+}
+
+/* ============ 版面 ============ */
+.cb-root {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* -------- 左側側欄 -------- */
+.cb-sidebar {
+  width: var(--sidebar-w);
+  background: #fff;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  padding-bottom: 24px;
+}
+
+.cb-logo {
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  /* 放校徽可用：background:url(/logo.png) no-repeat center/120px auto; */
+}
+
+.cb-tree-title {
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 30px;
+  text-align: center;
+}
+
+.cb-tree {
+  list-style: none;
+  margin: 0;
+  padding: 0 8px 0 16px;
+  overflow: auto;
+  height: calc(100vh - 120px - 44px); /* 扣掉logo與標題高度 */
+}
+
+.cb-tree-item {
+  position: relative;
+  padding: 8px 8px 8px 18px;
+  border-radius: 6px;
+  font-size: 20px;
+  margin: 2px 4px;
+  cursor: default;
+}
+.cb-tree-item:hover {
+  background: #f2f4f7;
+}
+
+/* -------- 右側主區 -------- */
+.cb-main {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+/* 上方藍色漸層橫幅 */
+.cb-hero {
+  height: var(--hero-h);
+  background: linear-gradient(180deg, #39a3ff 0%, #29b0ff 40%, #27b9ff 65%, #2fc0ff 100%);
+  display: flex;
+  align-items: start;
+  justify-content: end;
+  padding: 16px 24px;
+  color: #fff;
+  font-weight: 100%;
+}
+.cb-login {
+  user-select: none;
+}
+
+/* 白色卡片 */
+.cb-card {
+  width: 90%;
+  height: 80%;
+  font-size: 20px;
+  margin: -80px auto 40px;    /* 浮在藍色橫幅上 */
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: var(--shadow);
+  padding: 22px 28px;
+  border: 1px solid var(--border);
+}
+.cb-card-title {
+  font-size: 40px;
+  font-weight: 800;
+  margin: 0 0 12px 0;
+}
+
+/* 區塊與條列 */
+.cb-section { margin-top: 6px; }
+.cb-section-title {
+  font-size: 25px;
+  font-weight: 800;
+  margin: 12px 0 8px 0;
+}
+.cb-list {
+  margin: 0;
+  padding-left: 22px;
+  line-height: 1.85;
+}
+.cb-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 14px 0;
+}
+
+/* 按鈕與頁腳 */
+.cb-actions { display: flex; justify-content: flex-end; margin-top: 8px; }
+.cb-btn {
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 6px 14px rgba(37,99,235,.25);
+}
+.cb-btn:hover { filter: brightness(.95); }
+
+/* -------- 響應式 -------- */
+@media (max-width: 980px) {
+  .cb-sidebar { display: none; }
+  .cb-card { margin: -80px 16px 24px; }
+}
+
+/* 右上登入按鈕 */
+.cb-login-btn{
+  background:#2563eb;
+  color:#fff;
+  padding:8px 14px;
+  border:0;
+  border-radius:8px;
+  font-weight:700;
+  cursor:pointer;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.cb-login-btn:hover{ filter:brightness(.95); }
+
+/* 內嵌登入表單 */
+.login-inline{
+  max-width: 440px;
+  padding: 8px 4px 4px;
+}
+.form-row{ margin: 12px 0; display:flex; flex-direction:column; gap:6px; }
+.form-row label{ font-weight:700; }
+.form-row input{
+  padding:10px 12px;
+  border:1px solid #d1d5db;
+  border-radius:8px;
+  font-size:15px;
+}
+.form-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:10px; }
+.cb-btn.ghost{
+  background:#eef2ff;
+  color:#334155;
+  box-shadow:none;
+}
