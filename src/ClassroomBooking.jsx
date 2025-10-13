@@ -1,47 +1,267 @@
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import "./App.css";
+
+/** 大樓清單（代碼＋名稱＋示例教室） */
+const BUILDINGS = [
+  { code: "INS", name: "資工系館", rooms: ["INS201", "INS202", "INS301", "INS302"] },
+  { code: "ECG", name: "電資暨綜合教學大樓", rooms: ["ECG301", "ECG302", "ECG310"] },
+  { code: "LIB", name: "圖書館大樓", rooms: ["LIB410", "LIB411"] },
+  { code: "GH1", name: "綜合一館", rooms: ["GH101", "GH102"] },
+  { code: "GH2", name: "綜合二館", rooms: ["GH201", "GH202"] },
+  // …其餘大樓可慢慢補；或改成呼叫後端回傳
+];
+
+/** 簡單的周曆常數 */
+const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"]; // 1..7
+const START_HOUR = 8;  // 08:00
+const END_HOUR = 21;   // 21:00（最後一格是 20-21）
+
+/** 範例：預先佔用的時段資料（實務上改成呼叫後端） */
+const PRESET_OCCUPIED = {
+  "INS201": [
+    { day: 1, start: 10, end: 12 }, // 週一 10-12
+    { day: 3, start: 14, end: 16 }, // 週三 14-16
+  ],
+  "INS202": [
+    { day: 2, start: 9, end: 11 },
+    { day: 5, start: 13, end: 15 },
+  ],
+  "ECG301": [{ day: 4, start: 8, end: 10 }],
+};
+
+/** 工具：把區間展開成一小時格陣列（例如 10–12 => 10,11） */
+function expandBlocks(blocks) {
+  const set = new Set();
+  blocks.forEach(({ day, start, end }) => {
+    for (let h = start; h < end; h++) {
+      set.add(`${day}-${h}`);
+    }
+  });
+  return set;
+}
+
+/** 週曆元件（輕量、無外部套件） */
+function WeekCalendar({ room, occupied, onReserve }) {
+  const [selected, setSelected] = useState(null); // {day, hour}
+
+  const occSet = useMemo(() => expandBlocks(occupied), [occupied]);
+
+  const cells = [];
+  for (let hour = START_HOUR; hour < END_HOUR; hour++) {
+    const row = [];
+    for (let d = 1; d <= 7; d++) {
+      const key = `${d}-${hour}`;
+      const isBlocked = occSet.has(key);
+      const isSel = selected && selected.day === d && selected.hour === hour;
+      row.push(
+        <div
+          key={key}
+          className={
+            "wk-cell" +
+            (isBlocked ? " is-occupied" : " is-free") +
+            (isSel ? " is-selected" : "")
+          }
+          role="button"
+          tabIndex={0}
+          onClick={() => {
+            if (isBlocked) return;
+            setSelected(isSel ? null : { day: d, hour });
+          }}
+          title={
+            isBlocked
+              ? "已被預約"
+              : `可預約：週${WEEK_DAYS[d - 1]} ${hour}:00–${hour + 1}:00`
+          }
+        />
+      );
+    }
+    cells.push(
+      <div key={`row-${hour}`} className="wk-row">
+        <div className="wk-hour">{`${hour}:00`}</div>
+        {row}
+      </div>
+    );
+  }
+
+  return (
+    <div className="wk-wrap">
+      <div className="wk-head">
+        <div className="wk-hour wk-head-empty" />
+        {WEEK_DAYS.map((d, i) => (
+          <div key={d} className="wk-day">{`週${d}`}</div>
+        ))}
+      </div>
+
+      <div className="wk-body">{cells}</div>
+
+      <div className="wk-actions">
+        <button
+          className="cb-btn"
+          disabled={!selected}
+          onClick={() => {
+            if (!selected) return;
+            const payload = {
+              room,
+              day: selected.day,
+              start: selected.hour,
+              end: selected.hour + 1,
+            };
+            onReserve?.(payload);
+          }}
+        >
+          {selected
+            ? `預約：${room}｜週${WEEK_DAYS[selected.day - 1]} ${selected.hour}:00–${selected.hour + 1
+            }:00`
+            : "選擇一個可預約的時段"}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function ClassroomBooking() {
   const [showLogin, setShowLogin] = useState(false);
+  const [q, setQ] = useState("");
+  const [selectedBuilding, setSelectedBuilding] = useState(null);
+  const [selectedRoom, setSelectedRoom] = useState(null);
 
-  const classrooms = [
-    "A203", "A204", "A205",
-    "A206 - 電腦教室-1", "A207 - 視聽教室", "A208 - 電腦教室-2",
-    "A209", "A210", "A211",
-    "A301 - 會議室", "A302 - 會議室", "A303", "A306",
-    "B218",
-    "B223 - 會議室-大", "B226 - 會議室-小",
-    "B323 - 會議室-大", "B326 - 會議室-小",
-  ];
+  // 前端暫存：每間教室的已占用時段（模擬後端）
+  const [occupiedMap, setOccupiedMap] = useState(PRESET_OCCUPIED);
 
-  // 假登入事件（之後可換成呼叫 API）
-  const handleLoginSubmit = (e) => {
-    e.preventDefault();
-    const form = new FormData(e.currentTarget);
-    const account = form.get("account");
-    const password = form.get("password");
-    console.log("login ->", account, password);
-    // TODO: 呼叫後端驗證，成功後關閉登入
-    setShowLogin(false);
-    alert("（範例）已送出登入，請接上你的 API 驗證邏輯。");
+  // 依關鍵字篩大樓
+  const filteredBuildings = useMemo(() => {
+    const kw = q.trim().toLowerCase();
+    if (!kw) return BUILDINGS;
+    return BUILDINGS.filter(
+      (b) =>
+        b.code.toLowerCase().includes(kw) ||
+        b.name.toLowerCase().includes(kw)
+    );
+  }, [q]);
+
+  // 依關鍵字篩教室
+  const filteredRooms = useMemo(() => {
+    if (!selectedBuilding) return [];
+    const kw = q.trim().toLowerCase();
+    const rooms = selectedBuilding.rooms || [];
+    if (!kw) return rooms;
+    return rooms.filter((r) => r.toLowerCase().includes(kw));
+  }, [q, selectedBuilding]);
+
+  const resetSelection = () => {
+    setSelectedBuilding(null);
+    setSelectedRoom(null);
+  };
+
+  /** 預約事件：這裡先做前端寫入；之後可改成呼叫 API */
+  const handleReserve = ({ room, day, start, end }) => {
+    // 實務上：POST 到 /api/reservations
+    const next = { ...occupiedMap };
+    const prev = next[room] || [];
+    next[room] = [...prev, { day, start, end }];
+    setOccupiedMap(next);
+    alert(`已送出預約（示例）：${room}｜週${WEEK_DAYS[day - 1]} ${start}:00–${end}:00`);
   };
 
   return (
     <div className="cb-root">
-      {/* 左側側欄 */}
+      {/* 左側側欄：品牌 + 搜尋 + 麵包屑 + 目錄 */}
       <aside className="cb-sidebar">
-        <div className="cb-logo" />
-        <div className="cb-tree-title">海大教室預約系統</div>
+        <div className="cb-brand">
+          <div className="cb-brand-top">
+            <div className="cb-logo" />
+            <div>
+              <div className="cb-brand-name">國立臺灣海洋大學</div>
+              <div className="cb-brand-sub">海大教室預約系統</div>
+            </div>
+          </div>
+
+          {/* 搜尋列 */}
+          <div className="cb-search">
+            <input
+              className="cb-search-input"
+              placeholder={selectedBuilding ? "搜尋教室…" : "搜尋大樓或代碼…"}
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+            />
+            {q && (
+              <button
+                className="cb-search-clear"
+                onClick={() => setQ("")}
+                aria-label="清除搜尋"
+              >
+                ×
+              </button>
+            )}
+          </div>
+
+          {/* 麵包屑 */}
+          <div className="cb-breadcrumb">
+            <button
+              className="cb-crumb"
+              disabled={!selectedBuilding}
+              onClick={resetSelection}
+              title="返回大樓清單"
+            >
+              大樓
+            </button>
+            {selectedBuilding && (
+              <>
+                <span className="cb-crumb-sep">/</span>
+                <span className="cb-crumb active">
+                  {selectedBuilding.name}（{selectedBuilding.code}）
+                </span>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* 目錄：大樓 or 教室 */}
         <ul className="cb-tree">
-          {classrooms.map((room) => (
-            <li key={room} className="cb-tree-item">{room}</li>
-          ))}
+          {!selectedBuilding &&
+            filteredBuildings.map((b) => (
+              <li
+                key={b.code}
+                className="cb-tree-item cb-tree-building"
+                onClick={() => {
+                  setSelectedBuilding(b);
+                  setSelectedRoom(null);
+                  setQ("");
+                }}
+                role="button"
+                tabIndex={0}
+              >
+                <span className="cb-building-code">{b.code}</span>
+                <span className="cb-building-name">{b.name}</span>
+              </li>
+            ))}
+
+          {selectedBuilding &&
+            (filteredRooms.length > 0 ? (
+              filteredRooms.map((r) => (
+                <li
+                  key={r}
+                  className={
+                    "cb-tree-item cb-tree-room" +
+                    (selectedRoom === r ? " is-active" : "")
+                  }
+                  onClick={() => setSelectedRoom(r)}
+                  role="button"
+                  tabIndex={0}
+                >
+                  <span className="cb-room-name">{r}</span>
+                </li>
+              ))
+            ) : (
+              <li className="cb-tree-empty">
+                {q ? "找不到符合的教室" : "此大樓尚未設定教室清單，請稍後接上 API。"}
+              </li>
+            ))}
         </ul>
       </aside>
 
-      {/* 右側主區域 */}
+      {/* 右側 */}
       <section className="cb-main">
-        {/* 上方藍色漸層 + 右上登入/返回按鈕 */}
         <div className="cb-hero">
           <button
             className="cb-login-btn"
@@ -52,12 +272,20 @@ export default function ClassroomBooking() {
           </button>
         </div>
 
-        {/* 中央卡片：根據狀態切換內容 */}
         <div className="cb-card">
           {showLogin ? (
             <>
               <h1 className="cb-card-title">登入系統</h1>
-              <form className="login-inline" onSubmit={handleLoginSubmit}>
+              <form
+                className="login-inline"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const form = new FormData(e.currentTarget);
+                  console.log("login ->", form.get("account"), form.get("password"));
+                  setShowLogin(false);
+                  alert("（範例）已送出登入，請接上 API。");
+                }}
+              >
                 <div className="form-row">
                   <label htmlFor="account">帳號</label>
                   <input id="account" name="account" type="text" required placeholder="請輸入帳號" />
@@ -78,28 +306,48 @@ export default function ClassroomBooking() {
             <>
               <h1 className="cb-card-title">教室預約系統說明</h1>
 
-              <div className="cb-section">
-                <h2 className="cb-section-title">注意事項</h2>
-                <ol className="cb-list">
-                  <li>因班排或系外系學生不當利用而影響系館師生晚間安寧，為加強管理教室借用狀況，自104.5.1起晚間17:00後時段採行「紙本」申請借用，空間暫停線上預借，申請表需由導師或指導教授簽名後再送至系辦申請，請各同學配合，謝謝。</li>
-                  <li>為維持教室使用效率，借用日期期限採現況或限期（例：僅開放借用當日+15天之教室）。</li>
-                  <li>平日晚上時段(17:00後)借用2樓教室者，系辦會先行開門（僅舉例）。借用3樓教室者，請先至系辦拿鑰匙開門。</li>
-                  <li>借用非上班日（包含星期六、日及固定同時段的教室），請填妥申請表，並將紙本申請表送交系辦（系學會活動需經系主任核後）待系主任核准後才能借用。—申請表下載</li>
-                </ol>
-              </div>
+              {selectedBuilding && selectedRoom && (
+                <div className="cb-selection-banner">
+                  目前選擇：{selectedBuilding.name}（{selectedBuilding.code}） / {selectedRoom}
+                </div>
+              )}
 
-              <div className="cb-divider" />
+              {/* 沒選到教室：顯示說明；選到教室：顯示週曆 */}
+              {!selectedRoom ? (
+                <>
+                  <div className="cb-section">
+                    <h2 className="cb-section-title">注意事項</h2>
+                    <ol className="cb-list dashed">
+                      <li>僅限本校教職員與在校學生登入並借用。</li>
+                      <li>借用人需自行負責設備保管與歸還狀況。。</li>
+                      <li>借用後須保持教室整潔、恢復原狀。</li>
+                      
+                    </ol>
+                  </div>
 
-              <div className="cb-section">
-                <h2 className="cb-section-title">借用流程</h2>
-                <ol className="cb-list">
-                  <li>本系同學請以 portal 帳號連動登入。</li>
-                  <li>進入系統後，先點選左側「教室列表」中欲預約的教室，畫面將顯示該教室當週使用情形。</li>
-                  <li>再點選上方「預約教室」，填寫完整預借資料後送出。</li>
-                  <li>回到「教室列表」確認教室預借紀錄已記錄，即完成預借。</li>
-                  <li>非本系師生欲借用者，請先洽系辦。</li>
-                </ol>
-              </div>
+                  <div className="cb-divider" />
+
+                  <div className="cb-section">
+                    <h2 className="cb-section-title">借用流程</h2>
+                    <ol className="cb-list dashed">
+                      <li>使用校園帳號登入（學生/老師/系統管理員）</li>
+                      <li>可依「大樓 → 教室」階層瀏覽</li>
+                      <li>選擇時間檢視該教室的可借用時段並點選想要的日期與時段。</li>
+                      <li>確定日期時間和教室位置和設備後，即可租借教室。</li>
+                      <li>借用當日去租借鑰匙，使用結束後，確認教室整潔和設備無異常並歸還鑰匙。</li>
+                    </ol>
+                  </div>
+                </>
+              ) : (
+                <div className="cb-section">
+                  <h2 className="cb-section-title">可預約時段</h2>
+                  <WeekCalendar
+                    room={selectedRoom}
+                    occupied={occupiedMap[selectedRoom] || []}
+                    onReserve={handleReserve}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
