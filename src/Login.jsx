@@ -93,7 +93,7 @@ export default function Login() {
 
                   <div className="form-actions" style={{ display: "flex", gap: 8 }}>
                     <button type="button" className="cb-btn ghost" onClick={() => setView("login")}>
-                      取消
+                      返回登入
                     </button>
                     <button type="submit" className="cb-btn">註冊</button>
                   </div>
