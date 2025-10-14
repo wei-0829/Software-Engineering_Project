@@ -270,82 +270,48 @@ export default function ClassroomBooking() {
         </div>
 
         <div className="cb-card">
-          {showLogin ? (
+          <h1 className="cb-card-title">教室預約系統說明</h1>
+
+          {selectedBuilding && selectedRoom && (
+            <div className="cb-selection-banner">
+              目前選擇：{selectedBuilding.name}（{selectedBuilding.code}） / {selectedRoom}
+            </div>
+          )}
+
+          {/* 沒選到教室：顯示說明；選到教室：顯示週曆 */}
+          {!selectedRoom ? (
             <>
-              <h1 className="cb-card-title">登入系統</h1>
-              <form
-                className="login-inline"
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const form = new FormData(e.currentTarget);
-                  console.log("login ->", form.get("account"), form.get("password"));
-                  setShowLogin(false);
-                  alert("（範例）已送出登入，請接上 API。");
-                }}
-              >
-                <div className="form-row">
-                  <label htmlFor="account">帳號</label>
-                  <input id="account" name="account" type="text" required placeholder="請輸入帳號" />
-                </div>
-                <div className="form-row">
-                  <label htmlFor="password">密碼</label>
-                  <input id="password" name="password" type="password" required placeholder="請輸入密碼" />
-                </div>
-                <div className="form-actions">
-                  <button type="button" className="cb-btn ghost" onClick={() => setShowLogin(false)}>
-                    取消
-                  </button>
-                  <button type="submit" className="cb-btn">登入</button>
-                </div>
-              </form>
+              <div className="cb-section">
+                <h2 className="cb-section-title">注意事項</h2>
+                <ol className="cb-list dashed">
+                  <li>僅限本校教職員與在校學生登入並借用。</li>
+                  <li>借用人需自行負責設備保管與歸還狀況。</li>
+                  <li>借用後須保持教室整潔、恢復原狀。</li>
+                </ol>
+              </div>
+
+              <div className="cb-divider" />
+
+              <div className="cb-section">
+                <h2 className="cb-section-title">借用流程</h2>
+                <ol className="cb-list dashed">
+                  <li>使用校園帳號登入（學生/老師/系統管理員）。</li>
+                  <li>可依「大樓 → 教室」階層瀏覽。</li>
+                  <li>選擇時間檢視該教室的可借用時段並點選想要的日期與時段。</li>
+                  <li>確定日期時間和教室位置和設備後，即可租借教室。</li>
+                  <li>借用當日去租借鑰匙，使用結束後，確認教室整潔和設備無異常並歸還鑰匙。</li>
+                </ol>
+              </div>
             </>
           ) : (
-            <>
-              <h1 className="cb-card-title">教室預約系統說明</h1>
-
-              {selectedBuilding && selectedRoom && (
-                <div className="cb-selection-banner">
-                  目前選擇：{selectedBuilding.name}（{selectedBuilding.code}） / {selectedRoom}
-                </div>
-              )}
-
-              {/* 沒選到教室：顯示說明；選到教室：顯示週曆 */}
-              {!selectedRoom ? (
-                <>
-                  <div className="cb-section">
-                    <h2 className="cb-section-title">注意事項</h2>
-                    <ol className="cb-list dashed">
-                      <li>僅限本校教職員與在校學生登入並借用。</li>
-                      <li>借用人需自行負責設備保管與歸還狀況。。</li>
-                      <li>借用後須保持教室整潔、恢復原狀。</li>
-                      
-                    </ol>
-                  </div>
-
-                  <div className="cb-divider" />
-
-                  <div className="cb-section">
-                    <h2 className="cb-section-title">借用流程</h2>
-                    <ol className="cb-list dashed">
-                      <li>使用校園帳號登入（學生/老師/系統管理員）</li>
-                      <li>可依「大樓 → 教室」階層瀏覽</li>
-                      <li>選擇時間檢視該教室的可借用時段並點選想要的日期與時段。</li>
-                      <li>確定日期時間和教室位置和設備後，即可租借教室。</li>
-                      <li>借用當日去租借鑰匙，使用結束後，確認教室整潔和設備無異常並歸還鑰匙。</li>
-                    </ol>
-                  </div>
-                </>
-              ) : (
-                <div className="cb-section">
-                  <h2 className="cb-section-title">可預約時段</h2>
-                  <WeekCalendar
-                    room={selectedRoom}
-                    occupied={occupiedMap[selectedRoom] || []}
-                    onReserve={handleReserve}
-                  />
-                </div>
-              )}
-            </>
+            <div className="cb-section">
+              <h2 className="cb-section-title">可預約時段</h2>
+              <WeekCalendar
+                room={selectedRoom}
+                occupied={occupiedMap[selectedRoom] || []}
+                onReserve={handleReserve}
+              />
+            </div>
           )}
         </div>
       </section>
