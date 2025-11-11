@@ -1,12 +1,27 @@
-html, body, #root {
-  height: 100%;
-  min-height: 100vh;
+/* ============ 全域變數與 Reset ============ */
+:root {
+  --sidebar-w: 400px;
+  --hero-h: 240px;
+  --radius: 16px;
+  --shadow: 0 18px 40px rgba(0, 0, 0, 0.12);
+  --border: #e9ecef;
+  --text: #1f2937;
+  --brand: #1455cf; /* 主藍 */
+  --brand-2: #2563eb; /* 次藍 */
+  --glass-bg: rgba(255, 255, 255, 0.72);
+  --glass-border: rgba(255, 255, 255, 0.38);
 }
 
-#root {
-  max-width: none;
-  width: 100%;
+/* Reset */
+* {
+  box-sizing: border-box;
   margin: 0;
   padding: 0;
-  text-align: initial;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100vh;
 }
