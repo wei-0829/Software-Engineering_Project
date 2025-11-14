@@ -5,19 +5,12 @@ import random
 from django.conf import settings
 from django.core.mail import send_mail, BadHeaderError
 from django.core.exceptions import ValidationError
+from django.utils import timezone
 from accounts.models import EmailVerification
 
 logger = logging.getLogger(__name__)
 EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@email\.ntou\.edu\.tw$', re.IGNORECASE)
 
-
-        
-
-def verify_code(email, user_input_code):
-    from django.core.exceptions import ValidationError
-from django.utils import timezone
-from datetime import timedelta
-from accounts.models import EmailVerification
 
 def verify_code(email, user_input_code):
     # 1. 取資料
