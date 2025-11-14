@@ -34,6 +34,13 @@ TIME_ZONE = "Asia/Taipei"
 
 # Application definition
 
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'SoftwareEngineering11401@gmail.com'
+EMAIL_HOST_PASSWORD = 'cmrg zoza nhkt qzsb'
+
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
