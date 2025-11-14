@@ -24,20 +24,19 @@ def verify_code(email, user_input_code):
         record.delete()
         raise ValidationError("驗證碼已過期，請重新寄送")
 
-    # 3. 錯誤次數過多
-    if record.attempts >= 3:
-        record.delete()
-        raise ValidationError("嘗試次數過多，請重新寄送驗證碼")
-
-    # 4. 比對成功
+    # 3. 比對成功
     if record.code == user_input_code:
         record.delete()
         return True
 
-    # 5. 比對失敗 → 次數 +1
+    # 4. 比對失敗 → 次數 +1
     record.attempts += 1
-    record.save()
-    raise ValidationError("驗證碼錯誤")
+    if record.attempts >= 3:
+        record.delete()
+        raise ValidationError("嘗試次數過多，請重新寄送驗證碼")
+    else:
+        record.save()
+        raise ValidationError("驗證碼錯誤")
 
 def generate_code():
     return str(random.randint(100000, 999999))
