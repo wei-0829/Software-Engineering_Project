@@ -1,0 +1,114 @@
+/* ===== Login Page ===== */
+.login-page {
+  min-height: 100vh;
+  background: #f3f6fb;
+  display: flex;
+  flex-direction: column;
+}
+.login-topbar {
+  height: 64px;
+  background: linear-gradient(180deg, #39a3ff 0%, #29b0ff 40%, #27b9ff 65%, #2fc0ff 100%);
+  color: #fff;
+  padding: 0 24px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 800;
+}
+.login-brand { 
+  font-size: 30px;
+  letter-spacing: .5px; 
+}
+
+.login-container { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+
+.login-panel {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0,0,0,.08);
+  padding: 16px;
+  display: grid;
+  grid-template-columns: 1.2fr .8fr;
+  gap: 16px;
+  width: 40%;
+  margin: 0 auto;
+}
+
+.login-left { padding: 8px 12px 16px; }
+.login-title { margin: 4px 0 12px; font-size: 20px; font-weight: 800; }
+.login-form { display: flex; flex-direction: column; gap: 10px; }
+.login-label { font-weight: 700; }
+.login-input {
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+}
+.login-input:focus { box-shadow: 0 0 0 3px rgba(59,130,246,.25); border-color: #60a5fa; }
+.login-remember { display: flex; align-items: center; gap: 6px; color: #374151; }
+
+.login-captcha {
+  height: 78px;
+  border: 1px dashed #9ca3af;
+  border-radius: 8px;
+  color: #6b7280;
+  display: flex; align-items: center; justify-content: center;
+  background: #f9fafb;
+}
+
+.login-right {
+  border-left: 1px solid #e5e7eb;
+  padding: 8px 12px 16px 18px;
+
+  /* 新增這些 */
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  justify-content: center;  /* 垂直置中 */
+}
+.login-link {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #111827;
+  background: #fafafa;
+
+  font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #111827;
+}
+.login-link:hover { background: #f3f4f6; }
+
+.login-notes {
+  font-size: 20px;
+  width: 40%;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #374151;
+}
+/* 右側選單：button 也用連結外觀，但不跳頁 */
+.login-link {
+  display: block;
+  padding: 10px 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fafafa;
+  color: #111827;
+  text-align: center;
+  cursor: pointer;         /* 重要：滑鼠為可點狀態 */
+}
+
+.login-link:hover {
+  background: #f3f4f6;
+}
+
+/* 讓 a.login-link 維持同外觀 */
+a.login-link {
+  text-decoration: none;
+}

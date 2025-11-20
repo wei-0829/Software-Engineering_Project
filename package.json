@@ -1,0 +1,32 @@
+{
+  "name": "software-engineering_project",
+  "version": "1.0.0",
+  "description": "海大教室借用平台",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/wei-0829/Software-Engineering_Project.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/wei-0829/Software-Engineering_Project/issues"
+  },
+  "homepage": "https://github.com/wei-0829/Software-Engineering_Project#readme",
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.5"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.1",
+    "vite": "^7.2.2"
+  }
+}

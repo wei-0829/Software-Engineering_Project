@@ -1,1 +1,13 @@
+# Node
+node_modules/
+dist/
+
+# Python (Django)
+__pycache__/
+*.pyc
+db.sqlite3
+venv/
+.env
+
+# macOS
 .DS_Store

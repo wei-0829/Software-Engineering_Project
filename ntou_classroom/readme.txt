@@ -1,36 +1,68 @@
-ntou_classroom/
-├── backend/
-│   ├── settings.py       <- Django 設定檔（資料庫、App、Middleware）
-│   ├── urls.py           <- 路由設定（API 與後台）
-│   ├── wsgi.py/asgi.py   <- 伺服器進入點
-│
-├── rooms/
-│   ├── models.py         <- 定義 Building / Room / Equipment 資料模型
-│   ├── admin.py          <- 後台註冊（顯示 Buildings / Rooms / Equipments）
-│   ├── serializers.py    <- API 序列化層（之後會新增）
-│   ├── views.py          <- API 視圖邏輯（之後會新增）
+ntou_classroom/                                                   ← 後端 Django 專案（Python + Django REST + 資料庫）
+├── backend/                         ← Django 主專案設定資料夾（同名 backend）
+│   ├── settings.py                  ← Django 設定檔（DB、App、Middleware、CORS 等）
+│   ├── urls.py                      ← 全站 URL 入口，include 各 app 的 urls
+│   ├── wsgi.py                      ← WSGI 入口（deploy 傳統伺服器用）
+│   └── asgi.py                      ← ASGI 入口（支援 WebSocket 等 async）
+├── accounts/                        ← 帳號 / 登入 / JWT 認證相關程式
+│   ├── serializers.py               ← 將 User 模型 ↔ JSON（註冊、登入的資料檢查）
+│   ├── views.py                     ← API 邏輯：/api/auth/register、/api/auth/login
+│   ├── urls.py                      ← accounts 這個 app 的路由設定
+│   └── __init__.py                  ← Python 認這是個 package 用的（可忽略）
+├── rooms/                           ← 教室 / 大樓 / 設備管理
+│   ├── models.py                    ← 定義 Building / Room / Equipment 等資料表
+│   ├── admin.py                     ← 後台註冊 models，讓管理員在 /admin 操作
+│   ├── serializers.py               ← 之後給前端的教室/大樓資料 JSON 格式
+│   ├── views.py                     ← 教室相關 API（查詢空教室等，之後會實作）
+│   ├── urls.py                      ← rooms app 自己的 API 路由
 │   └── management/
-│       └── commands/
-│           ├── seed_buildings.py   <- 建立所有「系館／大樓」資料
-│           └── seed_rooms.py       <- 為每棟館自動建立假教室與設備
+│       └── commands/                ← 自訂 Django 管理指令目錄
+│           ├── seed_buildings.py    ← 指令：自動建立館別資料（系館、大樓）
+│           └── seed_rooms.py        ← 指令：自動幫每棟大樓產生測試教室+設備
+├── reservations/                    ← 📅 教室預約與審核流程（之後擴充）
+│   ├── models.py                    ← 預約單 / 時段 / 審核狀態 等資料表
+│   ├── serializers.py               ← 預約資料 ↔ JSON
+│   ├── views.py                     ← 建立預約 / 查詢預約紀錄 的 API
+│   └── urls.py                      ← reservations app 的 API 路由
+├── db.sqlite3                       ← 本地開發用 SQLite 資料庫檔（Django 自動產生）
+├── manage.py                        ← Django 指令入口（runserver/migrate/shell…）
+└── requirements.txt                 ← 後端 Python 套件清單（pip install -r 用）
+│                           ← 前端 React + Vite 專案
+├── public/
+│   ├── ntou_logo.jpg                ← 海大 Logo 圖檔（顯示在頁面或標頭用）
+│   └── vite.svg                     ← Vite 預設 Logo（可之後換掉）
+├── src/
+│   ├── App.jsx                      ← React 主要頁面組合（router / layout）
+│   ├── App.css                      ← 全域樣式 or App 對應樣式
+│   ├── Login.jsx                    ← 登入/註冊/忘記密碼頁面（呼叫 /api/auth/*）
+│   ├── Login.css                    ← 登入頁 UI 樣式
+│   ├── ClassroomBooking.jsx         ← 教室預約主畫面（選大樓/時間等）
+│   ├── ClassroomBooking.css         ← 教室預約頁的樣式
+│   ├── main.jsx                     ← React 進入點，掛載到 HTML 的 root
+│   └── assets/
+│       └── react.svg                ← React Logo（通常 demo 用，之後可刪/替換）
+├── package.json                     ← 前端 npm 套件清單 + script（dev/build…）
+├── package-lock.json                ← npm 鎖版本檔，確保每台裝到一樣版本
+└── vite.config.js                   ← Vite 設定檔（dev server、proxy 等）
 │
-├── accounts/             <- 使用者登入 / JWT 認證
-├── reservations/         <- 教室租借邏輯
-│
-├── db.sqlite3            <- SQLite 資料庫（本機開發用）
-├── requirements.txt      <- 套件列表
-├── README.md             <- 專案說明文件
-└── manage.py             <- Django 主控制入口
+├── .env.example                         ← 環境變數範例檔（DB_NAME / DB_USER… 給組員參考）
+├── README.md                            ← 專案說明：架構、啟動方式、開發規則
+└── venv/                                ← Python 虛擬環境（本機用，通常不 commit）
+                                         （裡面有一堆套件檔案，不列在樹狀圖）
+
 
 
 source venv/bin/activate        <- 啟動虛擬環境
 
-python manage.py runserver      <- 啟動 Django 開發伺服器（http://127.0.0.1:8000/admin/）
+python manage.py runserver 8000     <- 啟動 Django 開發伺服器/前端（http://127.0.0.1:8000/admin/）
 
 python manage.py makemigrations     <- 產生資料庫遷移檔（依 models.py 變化）
 python manage.py migrate            <- 實際將資料表結構寫入 SQLite
 
 python manage.py createsuperuser    <- 建立後台登入帳號
+
+npm run dev           <- 開前端（http://127.0.0.1:5173/）
+
 
 
 
