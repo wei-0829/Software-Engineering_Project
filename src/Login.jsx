@@ -1,6 +1,14 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
+import './Login.css';
+
+/*
+  Login.jsx  
+  功能：登入 / 註冊 / 忘記密碼頁面  
+  - 前端呼叫 Django 後端 API：/api/auth/login/、/api/auth/register/
+  - 使用 JWT（登入後存 access_token / refresh_token）
+*/
 
 /*
   Login.jsx  
@@ -28,6 +36,7 @@ export default function Login() {
     try {
       // POST /api/auth/login/
       const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+      const res = await fetch("http://127.0.0.1:8001/api/auth/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -76,6 +85,7 @@ export default function Login() {
     try {
       // POST /api/auth/register/
       const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+      const res = await fetch("http://127.0.0.1:8001/api/auth/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
