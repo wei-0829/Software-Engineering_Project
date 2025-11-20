@@ -36,7 +36,6 @@ export default function Login() {
     try {
       // POST /api/auth/login/
       const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
-      const res = await fetch("http://127.0.0.1:8001/api/auth/login/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -85,7 +84,6 @@ export default function Login() {
     try {
       // POST /api/auth/register/
       const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
-      const res = await fetch("http://127.0.0.1:8001/api/auth/register/", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
