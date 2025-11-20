@@ -1,6 +1,25 @@
-venv/
+# Node
+node_modules/
+dist/
+
+# Python (Django)
 __pycache__/
 *.pyc
 db.sqlite3
+venv/
 .env
+
+# macOS
 .DS_Store
+
+
+CREATE DATABASE ntou_classroom_db
+  CHARACTER SET utf8mb4
+  COLLATE utf8mb4_unicode_ci;
+CREATE USER 'ntou_class_user'@'localhost' IDENTIFIED BY 'test123test';
+GRANT ALL PRIVILEGES ON ntou_classroom_db.* TO 'ntou_class_user'@'localhost';
+FLUSH PRIVILEGES;
+
+資料庫名：ntou_classroom_db
+帳號：ntou_class_user
+密碼：test123test
