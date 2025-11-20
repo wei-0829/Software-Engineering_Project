@@ -1,4 +1,3 @@
-import React from "react";
 import ClassroomBooking from "./ClassroomBooking";
 import "./App.css";
 
