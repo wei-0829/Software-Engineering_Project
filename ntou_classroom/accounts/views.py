@@ -17,6 +17,17 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            user = serializer.save()
+            return Response(
+                {
+                    "id": user.id,
+                    "account": user.username,
+                    "name": user.first_name,
+                },
+                status=status.HTTP_201_CREATED,
+            )
         # 將 request.data 丟給 serializer 進行驗證
         serializer = RegisterSerializer(data=request.data)
 
@@ -41,6 +52,7 @@ class RegisterView(APIView):
 class LoginView(APIView):
     """
     POST /api/auth/login/
+    - 驗證帳號密碼，產生 JWT token
     - 使用 LoginSerializer 驗證帳密
     - 驗證成功後由 SimpleJWT 建立 access & refresh token
     - 讓前端可以儲存 token 進行登入狀態維持
@@ -48,6 +60,15 @@ class LoginView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        user = serializer.validated_data["user"]
+
+        # 建立 JWT token
+        refresh = RefreshToken.for_user(user)
+
         # 驗證 input（account / password）
         serializer = LoginSerializer(data=request.data)
 
