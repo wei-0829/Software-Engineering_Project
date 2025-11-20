@@ -120,8 +120,13 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # =========================================================
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",  # 使用 MySQL
+        "NAME": env("DB_NAME"),                # 資料庫名稱
+        "USER": env("DB_USER"),                # 帳號
+        "PASSWORD": env("DB_PASSWORD"),        # 密碼
+        "HOST": env("DB_HOST", default="127.0.0.1"),
+        "PORT": env("DB_PORT", default="3306"),
+        "OPTIONS": {"charset": "utf8mb4"},      # 支援 emoji / 中文
     }
 }
 

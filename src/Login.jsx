@@ -10,6 +10,13 @@ import './Login.css';
   - 使用 JWT（登入後存 access_token / refresh_token）
 */
 
+/*
+  Login.jsx  
+  功能：登入 / 註冊 / 忘記密碼頁面  
+  - 前端呼叫 Django 後端 API：/api/auth/login/、/api/auth/register/
+  - 使用 JWT（登入後存 access_token / refresh_token）
+*/
+
 export default function Login() {
   // 控制左側顯示哪一個表單(login / register / forgot)
   const [view, setView] = useState("login");
@@ -28,6 +35,7 @@ export default function Login() {
 
     try {
       // POST /api/auth/login/
+      const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
       const res = await fetch("http://127.0.0.1:8001/api/auth/login/", {
         method: "POST",
         headers: {
@@ -76,6 +84,7 @@ export default function Login() {
 
     try {
       // POST /api/auth/register/
+      const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
       const res = await fetch("http://127.0.0.1:8001/api/auth/register/", {
         method: "POST",
         headers: {
