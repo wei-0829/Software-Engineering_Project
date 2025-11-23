@@ -5,8 +5,9 @@ import random
 from django.conf import settings
 from django.core.mail import send_mail, BadHeaderError
 from django.core.exceptions import ValidationError
+from django.http import HttpResponse
 from django.utils import timezone
-from accounts.models import EmailVerification
+from django_otp.plugins.otp_email.models import EmailDevice
 
 logger = logging.getLogger(__name__)
 EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@email\.ntou\.edu\.tw$', re.IGNORECASE)
@@ -47,6 +48,24 @@ def validate_ntou_email(email):
         raise ValidationError("請使用海大學校帳號")
 
 
+
+def create_email_device(user):
+    device = EmailDevice.objects.create(
+        user=user,
+        name="default",
+        email=user.email,
+        confirmed=False,  # 之後驗成功才能變 True
+    )
+    return device
+
+def enable_email_otp(request):
+    device = EmailDevice.objects.create(
+        user=request.user,
+        name="email",
+        email=request.user.email,   # 發送 OTP 到這裡
+    )
+    return HttpResponse("Email OTP 啟用完成！")
+
 def send_verification(email, code=None, subject="教室租借系統-郵件驗證", from_email=None):
     validate_ntou_email(email)
 
@@ -83,3 +102,5 @@ def send_verification(email, code=None, subject="教室租借系統-郵件驗證
         "attempts": 0
     }
 )
+    
+    

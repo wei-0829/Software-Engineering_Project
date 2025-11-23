@@ -30,6 +30,27 @@ export default function Login() {
     setView("login");
   };
 
+  // 寄送驗證碼
+  const onSubmitValidation = async (e) => {
+    e.preventDefault();
+    const registerForm = e.target.closest(".login-form");
+    const name = registerForm.elements["name"].value;
+    const account = registerForm.elements["account"].value;
+    if (!name || !account) {
+      alert("請先輸入姓名與學校帳號");
+      return;
+    }
+    const res = await fetch("http://127.0.0.1:8000/api/auth/send_verification/", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, account }),
+    });
+  };
+
+  
+  /* -----------------------------
+      4. 畫面顯示
+     ----------------------------- */
   return (
     <div className="login-page">
       <header className="login-topbar">
@@ -87,13 +108,52 @@ export default function Login() {
                   <input className="login-input" type="text" placeholder="請輸入姓名" required />
 
                   <label className="login-label">學校帳號</label>
-                  <input className="login-input" type="text" placeholder="請輸入學校帳號" required />
-
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        className="login-input"
+                        type="text"
+                        name="account"
+                        placeholder="請輸入學校帳號"
+                        required
+                      />
+                      <button
+                        type="button"
+                        className="cb-btn ghost"
+                        onClick={onSubmitValidation}
+                      >
+                        發送驗證碼
+                      </button>
+                    </div>
+                  
                   <label className="login-label">密碼</label>
-                  <input className="login-input" type="password" placeholder="請輸入密碼" required />
-
-                  <div className="form-actions" style={{ display: "flex", gap: 8 }}>
-                    <button type="button" className="cb-btn ghost" onClick={() => setView("login")}>
+                  <input
+                    className="login-input"
+                    type="password"
+                    name="password"
+                    placeholder="請輸入密碼"
+                    required
+                  />
+                
+                    <label className="login-label">驗證碼</label>
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        className="login-input"
+                        type="text"
+                        placeholder="請輸入驗證碼"
+                        required
+                        style={{ flex: 1 }}
+                      />
+                    </div>
+                
+                  <div
+                    className="form-actions"
+                    style={{ display: "flex", gap: 8 }}
+                  >
+                    <button
+                      type="button"
+                      className="cb-btn ghost"
+                      onClick={() => setView("login")}
+                    >
                       返回登入
                     </button>
                     <button type="submit" className="cb-btn">註冊</button>

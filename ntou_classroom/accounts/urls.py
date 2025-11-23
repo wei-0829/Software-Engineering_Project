@@ -1,0 +1,23 @@
+from django.urls import path
+from .views import RegisterView, LoginView,SendVerificationView,VerifyCodeView
+
+"""
+accounts/urls.py
+
+此模組負責處理「帳號相關 API」的路由設定。
+
+最終完整路徑會變成：
+- POST /api/auth/register/
+- POST /api/auth/login/
+
+這些路由會在 backend/urls.py 使用：
+path("api/auth/", include("accounts.urls"))
+進行 prefix 統一。
+"""
+
+urlpatterns = [
+    path("register/", RegisterView.as_view(), name="register"),
+    path("login/", LoginView.as_view(), name="login"),
+    path("send_verification/", SendVerificationView.as_view(), name="send_verification"),
+    path("verify_code/", VerifyCodeView.as_view(), name="verify_code"),
+]

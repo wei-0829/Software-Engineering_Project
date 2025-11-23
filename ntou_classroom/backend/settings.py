@@ -42,15 +42,19 @@ EMAIL_HOST_USER = 'SoftwareEngineering11401@gmail.com'
 EMAIL_HOST_PASSWORD = 'cmrg zoza nhkt qzsb'
 
 INSTALLED_APPS = [
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
-
-    'rest_framework',
-    'rest_framework_simplejwt',
+    # Django 內建 app
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
+    'django_otp',
+    'django_otp.plugins.otp_email',
+    # 第三方套件（DRF + JWT + CORS）
+    "corsheaders",                   # 允許前端（5173）呼叫 API
+    "rest_framework",                # Django REST Framework
+    "rest_framework_simplejwt",      # JWT 驗證系統
 
     'accounts',
     'rooms',
@@ -66,6 +70,8 @@ REST_FRAMEWORK = {
 
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    'django_otp.middleware.OTPMiddleware',
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -74,6 +80,7 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
 
 ROOT_URLCONF = "backend.urls"
 
