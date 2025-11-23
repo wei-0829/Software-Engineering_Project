@@ -188,6 +188,20 @@ export default function Login() {
                     required
                   />
 
+                  <label className="login-label">驗證碼</label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      className="login-input"
+                      type="text"
+                      placeholder="請輸入驗證碼"
+                      required
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" className="cb-btn ghost">
+                      發送驗證碼
+                    </button>
+                  </div>
+                  
                   <div
                     className="form-actions"
                     style={{ display: "flex", gap: 8 }}
@@ -279,5 +293,6 @@ export default function Login() {
     </div>
   );
 }
+
 
 
