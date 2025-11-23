@@ -3,15 +3,16 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 
-# ===============================
-#  註冊 Register Serializer
-# ===============================
+# -----------------------------
+# 註冊 Serializer
+# -----------------------------
 class RegisterSerializer(serializers.ModelSerializer):
     """
     處理註冊資料：
-      - account → 學校帳號（對應 User.username）
-      - name    → 姓名（對應 User.first_name）
-      - password（加密儲存）
+    前端送：
+      - account  → User.username
+      - name     → User.first_name
+      - password → 密碼
     """
 
     account = serializers.CharField(write_only=True)
@@ -25,7 +26,7 @@ class RegisterSerializer(serializers.ModelSerializer):
     def validate_account(self, value):
         """檢查帳號是否已存在"""
         if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("帳號已被使用")
+            raise serializers.ValidationError("此帳號已被註冊")
         return value
 
     def create(self, validated_data):
@@ -34,17 +35,18 @@ class RegisterSerializer(serializers.ModelSerializer):
         name = validated_data.pop("name")
         password = validated_data.pop("password")
 
+        # Django 內建 create_user → 自動做密碼 hash
         user = User.objects.create_user(
             username=account,
             first_name=name,
-            password=password
+            password=password,
         )
         return user
 
 
-# ===============================
-#  登入 Login Serializer
-# ===============================
+# -----------------------------
+# 登入 Serializer（一般帳密登入）
+# -----------------------------
 class LoginSerializer(serializers.Serializer):
     """
     處理登入：
@@ -60,6 +62,7 @@ class LoginSerializer(serializers.Serializer):
         account = attrs.get("account")
         password = attrs.get("password")
 
+        # authenticate 會自動比對 hash
         user = authenticate(username=account, password=password)
 
         if not user:
