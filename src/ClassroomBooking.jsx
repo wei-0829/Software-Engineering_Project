@@ -125,14 +125,10 @@ export default function ClassroomBooking() {
 
   const navigate = useNavigate();
   const [occupiedMap, setOccupiedMap] = useState(PRESET_OCCUPIED);
-  const [user, setUser] = useState(() => {
-    const raw = localStorage.getItem("user");
-    try {
-      return raw ? JSON.parse(raw) : null;
-    } catch {
-      return null;
-    }
+  const [username, setUsername] = useState(() => {
+    return localStorage.getItem("username");
   });
+
     const handleBackToBooking = () => {
     setShowHistory(false);
     setShowRequests(false);
@@ -141,12 +137,12 @@ export default function ClassroomBooking() {
   const handleLogout = () => {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
-    setUser(null);
+    localStorage.removeItem("username");
+    setUsername(null);
     setShowHistory(false);
     setShowRequests(false);
-   
   };
+
 
 
   const filteredBuildings = useMemo(() => {
@@ -406,16 +402,15 @@ export default function ClassroomBooking() {
         </button>
       )}
 
-      {/* 👇 登入狀態切換：沒登入 → 登入按鈕；有登入 → 使用者名稱 + 登出 */}
-      {user ? (
+      {/*  登入狀態切換：沒登入 → 登入按鈕；有登入 → 使用者名稱 + 登出 */}
+      {username ? (
         <>
-          {/* 使用者名稱（不一定要可點，這邊用 disabled 按鈕展示即可） */}
           <button
             className="cb-login-btn"
             style={{ cursor: "default", opacity: 0.9 }}
             disabled
           >
-            {user.name || user.username || "已登入使用者"}
+            {username}
           </button>
 
           <button className="cb-login-btn" onClick={handleLogout}>
@@ -427,6 +422,7 @@ export default function ClassroomBooking() {
           登入
         </button>
       )}
+
     </div>
   </div>
 
