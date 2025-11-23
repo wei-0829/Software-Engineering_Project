@@ -10,13 +10,6 @@ import './Login.css';
   - 使用 JWT（登入後存 access_token / refresh_token）
 */
 
-/*
-  Login.jsx  
-  功能：登入 / 註冊 / 忘記密碼頁面  
-  - 前端呼叫 Django 後端 API：/api/auth/login/、/api/auth/register/
-  - 使用 JWT（登入後存 access_token / refresh_token）
-*/
-
 export default function Login() {
   // 控制左側顯示哪一個表單(login / register / forgot)
   const [view, setView] = useState("login");
@@ -30,6 +23,9 @@ export default function Login() {
   /* -----------------------------
       1. 登入 API 呼叫
      ----------------------------- */
+  const form = e.target;
+  const account = form.elements[0].value;
+  const password = form.elements[1].value;
   const onSubmitLogin = async (e) => {
     e.preventDefault();
 
@@ -66,14 +62,15 @@ export default function Login() {
       console.error(err);
       alert("無法連線到伺服器");
     }
-  };
 
+    const data = await res.json();
+    // ... 下面照你原本的邏輯存 token / user、navigate("/")
+  } catch (err) {
+    console.error(err);
+    alert("無法連線到伺服器");
+  }
+};
 
-  /* -----------------------------
-      2. 註冊 API 呼叫
-     ----------------------------- */
-  const onSubmitRegister = async (e) => {
-    e.preventDefault();
 
     // 直接從 form 裡抓三個欄位：姓名 / 帳號 / 密碼
     const form = e.target;
@@ -104,7 +101,15 @@ export default function Login() {
       console.error(err);
       alert("無法連線到伺服器");
     }
-  };
+
+    const data = await res.json();
+    // ... 你原本的處理
+  } catch (err) {
+    console.error(err);
+    alert("無法連線到伺服器");
+  }
+};
+
 
 
   /* -----------------------------

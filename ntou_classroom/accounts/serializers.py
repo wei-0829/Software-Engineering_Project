@@ -21,14 +21,16 @@ class RegisterSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["id", "account", "name", "password"]
+        fields = ["account", "name", "password"]
 
     def validate_account(self, value):
+        """檢查帳號是否已存在"""
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("此帳號已被註冊")
         return value
 
     def create(self, validated_data):
+        """建立使用者（自動 password hash）"""
         account = validated_data.pop("account")
         name = validated_data.pop("name")
         password = validated_data.pop("password")
@@ -47,8 +49,8 @@ class RegisterSerializer(serializers.ModelSerializer):
 # -----------------------------
 class LoginSerializer(serializers.Serializer):
     """
-    前端送：
-      - account（對應 User.username）
+    處理登入：
+      - account（對應 username）
       - password
     """
 
@@ -56,6 +58,7 @@ class LoginSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True)
 
     def validate(self, attrs):
+        """驗證帳號密碼"""
         account = attrs.get("account")
         password = attrs.get("password")
 
