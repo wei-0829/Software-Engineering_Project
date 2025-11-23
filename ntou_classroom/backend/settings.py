@@ -11,6 +11,7 @@ Django settings for backend project.
 
 from pathlib import Path
 import environ
+import platform
 
 # =========================================================
 # 基本路徑設定 & 載入 .env（放 MySQL 密碼、資料庫名稱）
@@ -21,6 +22,34 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 env = environ.Env()
 environ.Env.read_env(BASE_DIR / ".env")
 
+if platform.system() == "Windows":
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": "127.0.0.1",
+            "PORT": "3306",
+            "OPTIONS": {"charset": "utf8mb4"},
+        }
+    }
+
+else:
+    DATABASES = {
+        "default": {
+            "ENGINE": "django.db.backends.mysql",
+            "NAME": env("DB_NAME"),
+            "USER": env("DB_USER"),
+            "PASSWORD": env("DB_PASSWORD"),
+            "HOST": "localhost",
+            "PORT": "",
+            "OPTIONS": {
+                "unix_socket": "/tmp/mysql.sock",   
+                "charset": "utf8mb4",
+            },
+        }
+    }
 
 # =========================================================
 # 安全性 & Debug 模式
@@ -69,7 +98,6 @@ REST_FRAMEWORK = {
 # Middleware（每個 request 都會經過這裡）
 # =========================================================
 MIDDLEWARE = [
-    # ⭐ 必須放在第一個，否則 CORS 無效
     "corsheaders.middleware.CorsMiddleware",
 
     "django.middleware.security.SecurityMiddleware",
@@ -113,28 +141,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = "backend.wsgi.application"
-
-
-# =========================================================
-# MySQL 資料庫設定（讀取 .env 變數）
-# =========================================================
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.mysql",
-        "NAME": env("DB_NAME"),
-        "USER": env("DB_USER"),
-        "PASSWORD": env("DB_PASSWORD"),
-        "HOST": "localhost",
-        "PORT": "",
-
-        "OPTIONS": {
-            "unix_socket": "/tmp/mysql.sock",   
-            "charset": "utf8mb4",
-        },
-    }
-}
-
-
 
 # =========================================================
 # 密碼規則（登入系統預設規則）
