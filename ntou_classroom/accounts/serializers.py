@@ -3,69 +3,33 @@ from django.contrib.auth import authenticate
 from rest_framework import serializers
 
 
+# ===============================
+#  註冊 Register Serializer
+# ===============================
 class RegisterSerializer(serializers.ModelSerializer):
     """
-    前端送：
+    處理註冊資料：
       - account → 學校帳號（對應 User.username）
       - name    → 姓名（對應 User.first_name）
-      - password
+      - password（加密儲存）
     """
 
     account = serializers.CharField(write_only=True)
     name = serializers.CharField(write_only=True)
-    password = serializers.CharField(write_only=True, min_length=8)
+    password = serializers.CharField(write_only=True, min_length=6)
 
     class Meta:
         model = User
         fields = ["account", "name", "password"]
 
     def validate_account(self, value):
-        # 檢查帳號是否重複
-        if User.objects.filter(username=value).exists():
-            raise serializers.ValidationError("此帳號已被註冊")
-        return value
-
-    def create(self, validated_data):
-        account = validated_data["account"]
-        name = validated_data["name"]
-        password = validated_data["password"]
-
-        # create_user 會自動幫你做密碼 hash
-        user = User.objects.create_user(
-            username=account,
-            first_name=name,
-            password=password,
-    用於處理註冊請求的 Serializer。
-
-    前端會送：
-      - account（學校帳號 → 對應 User.username）
-      - name（姓名 → 對應 User.first_name）
-      - password（密碼）
-
-    我們不直接使用 User.username / User.first_name
-    是因為前端欄位名稱不一樣，所以用自訂欄位 mapping。
-    """
-    account = serializers.CharField(write_only=True)     # 對應 Django User.username
-    name = serializers.CharField(write_only=True)        # 對應 Django User.first_name
-    password = serializers.CharField(write_only=True, min_length=6)
-
-    class Meta:
-        model = User
-        fields = ["id", "account", "name", "password"]
-
-    def validate_account(self, value):
-        """
-        註冊前檢查帳號是否已存在（避免 duplicate username）。
-        """
+        """檢查帳號是否已存在"""
         if User.objects.filter(username=value).exists():
             raise serializers.ValidationError("帳號已被使用")
         return value
 
     def create(self, validated_data):
-        """
-        建立 User 物件。
-        使用 create_user() → Django 會自動做密碼雜湊（hash）
-        """
+        """建立使用者（自動 password hash）"""
         account = validated_data.pop("account")
         name = validated_data.pop("name")
         password = validated_data.pop("password")
@@ -73,33 +37,26 @@ class RegisterSerializer(serializers.ModelSerializer):
         user = User.objects.create_user(
             username=account,
             first_name=name,
-            password=password,   # create_user 會自動 hash 密碼
+            password=password
         )
         return user
 
 
+# ===============================
+#  登入 Login Serializer
+# ===============================
 class LoginSerializer(serializers.Serializer):
     """
-    前端送：
-      - account（對應 User.username）
+    處理登入：
+      - account（對應 username）
       - password
     """
+
     account = serializers.CharField()
     password = serializers.CharField(write_only=True)
-    用於處理登入請求的 Serializer。
-
-    前端會送：
-      - account（對應 User.username）
-      - password
-
-    authenticate()：
-      → Django 內建方法，會自動做密碼比對
-      → 如果帳密錯誤就會回傳 None
-    """
-    account = serializers.CharField()
-    password = serializers.CharField()
 
     def validate(self, attrs):
+        """驗證帳號密碼"""
         account = attrs.get("account")
         password = attrs.get("password")
 
@@ -108,14 +65,5 @@ class LoginSerializer(serializers.Serializer):
         if not user:
             raise serializers.ValidationError("帳號或密碼錯誤")
 
-        # 後面 View 用得到 user
-        # Django 內建帳號驗證流程
-        user = authenticate(username=account, password=password)
-
-        if not user:
-            # 統一回傳錯誤訊息給前端
-            raise serializers.ValidationError("帳號或密碼錯誤")
-
-        # 驗證成功，將 user 放入 validated_data 回傳給 View 使用
         attrs["user"] = user
         return attrs
