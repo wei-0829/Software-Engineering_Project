@@ -6,8 +6,8 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer
-from accounts.services import send_verification, verify_code
-
+from accounts.services import send_verification, verify_code,valid_password
+import re
 User = get_user_model()
 
 
@@ -23,16 +23,18 @@ class RegisterView(APIView):
     def post(self, request):
         account = (request.data.get("account") or "").strip()
         code = (request.data.get("code") or "").strip()
-
+        password =(request.data.get("password") or "").strip()
         if not account:
             return Response({"detail": "缺少 account"}, status=status.HTTP_400_BAD_REQUEST)
         if not code:
             return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
-
+        if not password:
+            return Response({"detail": "缺少密碼"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            verify_code(account, code)
+            valid_password(password)
+            verify_code(account, code,"register:")
         except ValidationError as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             return Response({"detail": "驗證碼驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
@@ -47,7 +49,7 @@ class RegisterView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-
+        
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -108,15 +110,14 @@ class SendVerificationView(APIView):
 
     def post(self, request):
         email = (request.data.get("account") or "").strip()
-        name = request.data.get("name")
         if not email:
             return Response({"detail": "缺少 account(email)"}, status=status.HTTP_400_BAD_REQUEST)
 
-        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
+        if User.objects.filter(username=email).exists():
             return Response({"detail": "此帳號已存在，請直接登入或更換帳號"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            send_verification(email)
+            send_verification(email,"register:")
             return Response({"detail": "驗證碼已寄出"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
@@ -124,23 +125,64 @@ class SendVerificationView(APIView):
             return Response({"detail": e.message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-class VerifyCodeView(APIView):
-    """
-    POST /api/auth/verify_code/
-    - 驗證使用者輸入的驗證碼
-    """
+
+class ChangePasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = (request.data.get("account") or "").strip()
-        code = (request.data.get("code") or "").strip()
-        if not email or not code:
-            return Response({"detail": "缺少 account 或 code 欄位"}, status=status.HTTP_400_BAD_REQUEST)
+    
+        if not email:
+            return Response({"detail": "缺少 account(email)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not User.objects.filter(username=email).exists():
+            return Response({"detail": "此帳不存在，請註冊新帳號"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            verify_code(email, code)
-            return Response({"detail": "驗證成功"}, status=status.HTTP_200_OK)
+            send_verification(email,"changepwd:")
+            return Response({"detail": "驗證碼已寄出"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": e.message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+        
+class VerifyChangePasswordView(APIView):
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        account = (request.data.get("account") or "").strip()
+        code = (request.data.get("code") or "").strip()
+        password = (request.data.get("password") or "").strip()
+
+        if not account:
+            return Response({"detail": "缺少 account"}, status=status.HTTP_400_BAD_REQUEST)
+        if not code:
+            return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
+        if not password:
+            return Response({"detail": "缺少新密碼"}, status=status.HTTP_400_BAD_REQUEST)
+        try:
+            valid_password(password)
+            verify_code(account, code,"changepwd:")
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
-            return Response({"detail": "驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            return Response({"detail": "驗證碼驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+        user = User.objects.filter(username=account).first()
+        if user.check_password(password):
+            return Response({"detail":"無法使用相同密碼"},status=status.HTTP_400_BAD_REQUEST)
+        if not user:
+            return Response({"detail": "找不到使用者"}, status=status.HTTP_404_NOT_FOUND)
+
+        # 更新密碼，若有傳 name 也一併更新
+        user.set_password(password)
+        user.save()
+
+        return Response(
+            {
+                "id": user.id,
+                "account": user.username,
+                "name": user.first_name,
+            },
+            status=status.HTTP_200_OK,
+        )
