@@ -55,6 +55,7 @@ export default function Login() {
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
       localStorage.setItem("user", JSON.stringify(data.user));
+       localStorage.setItem("username", account);
 
       navigate("/");
     } catch (err) {
@@ -291,8 +292,8 @@ export default function Login() {
             {view === "forgot" && (
               <>
                 <h2 className="login-title">忘記密碼</h2>
-
                 <form className="login-form" onSubmit={onSubmitForgot}>
+                  {/* 1. 帳號 */}
                   <label className="login-label">輸入學校帳號</label>
                   <input
                     className="login-input"
@@ -301,20 +302,44 @@ export default function Login() {
                     required
                   />
 
-                  <div
-                    className="form-actions"
-                    style={{ display: "flex", gap: 8 }}
-                  >
-                    <button
-                      type="button"
-                      className="cb-btn ghost"
-                      onClick={() => setView("login")}
-                    >
+                  {/* 2. 驗證碼 + 發送按鈕 */}
+                  <label className="login-label">驗證碼</label>
+                  <div style={{ display: "flex", gap: 8 }}>
+                    <input
+                      className="login-input"
+                      type="text"
+                      placeholder="請輸入驗證碼"
+                      required
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" className="cb-btn ghost">
+                      發送驗證碼
+                    </button>
+                  </div>
+
+                  {/* 3. 新密碼 & 確認新密碼 */}
+                  <label className="login-label">新密碼</label>
+                  <input
+                    className="login-input"
+                    type="password"
+                    placeholder="請輸入新密碼"
+                    required
+                  />
+
+                  <label className="login-label">確認新密碼</label>
+                  <input
+                    className="login-input"
+                    type="password"
+                    placeholder="請再次輸入新密碼"
+                    required
+                  />
+
+                  {/* 4. 按鈕區塊 */}
+                  <div className="form-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <button type="button" className="cb-btn ghost" onClick={() => setView("login")}>
                       返回登入
                     </button>
-                    <button type="submit" className="cb-btn">
-                      送出
-                    </button>
+                    <button type="submit" className="cb-btn">送出</button>
                   </div>
                 </form>
               </>
@@ -359,6 +384,7 @@ export default function Login() {
     </div>
   );
 }
+
 
 
 
