@@ -3,8 +3,12 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
-
+from django.core.exceptions import ValidationError
+from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer
+from accounts.services import send_verification, verify_code
+
+User = get_user_model()
 
 
 class RegisterView(APIView):
@@ -17,6 +21,21 @@ class RegisterView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
+        account = (request.data.get("account") or "").strip()
+        code = (request.data.get("code") or "").strip()
+
+        if not account:
+            return Response({"detail": "缺少 account"}, status=status.HTTP_400_BAD_REQUEST)
+        if not code:
+            return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verify_code(account, code)
+        except ValidationError as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"detail": "驗證碼驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
         serializer = RegisterSerializer(data=request.data)
         if serializer.is_valid():
             user = serializer.save()
@@ -28,24 +47,7 @@ class RegisterView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-        # 將 request.data 丟給 serializer 進行驗證
-        serializer = RegisterSerializer(data=request.data)
 
-        # 若 serializer 驗證通過，save() 會建立 Django User
-        if serializer.is_valid():
-            user = serializer.save()
-
-            # 回傳最基本的使用者資訊給前端
-            return Response(
-                {
-                    "id": user.id,
-                    "account": user.username,   # 我們把學校帳號塞到 username
-                    "name": user.first_name,    # 姓名塞在 first_name
-                },
-                status=status.HTTP_201_CREATED,
-            )
-
-        # 若驗證失敗，回傳 serializer.errors
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -95,3 +97,50 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class SendVerificationView(APIView):
+    """
+    POST /api/auth/send_verification/
+    - 送出 email 驗證碼
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("account") or "").strip()
+        name = request.data.get("name")
+        if not email:
+            return Response({"detail": "缺少 account(email)"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if User.objects.filter(username=email).exists() or User.objects.filter(email=email).exists():
+            return Response({"detail": "此帳號已存在，請直接登入或更換帳號"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            send_verification(email)
+            return Response({"detail": "驗證碼已寄出"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception as e:
+            return Response({"detail": e.message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+
+
+class VerifyCodeView(APIView):
+    """
+    POST /api/auth/verify_code/
+    - 驗證使用者輸入的驗證碼
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        email = (request.data.get("account") or "").strip()
+        code = (request.data.get("code") or "").strip()
+        if not email or not code:
+            return Response({"detail": "缺少 account 或 code 欄位"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            verify_code(email, code)
+            return Response({"detail": "驗證成功"}, status=status.HTTP_200_OK)
+        except ValidationError as e:
+            return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
+        except Exception:
+            return Response({"detail": "驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)

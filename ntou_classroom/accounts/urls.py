@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import RegisterView, LoginView
+from .views import RegisterView, LoginView,SendVerificationView,VerifyCodeView
 
 """
 accounts/urls.py
@@ -16,9 +16,8 @@ path("api/auth/", include("accounts.urls"))
 """
 
 urlpatterns = [
-    # 註冊 API：POST /api/auth/register/
     path("register/", RegisterView.as_view(), name="register"),
-
-    # 登入 API：POST /api/auth/login/
     path("login/", LoginView.as_view(), name="login"),
+    path("send_verification/", SendVerificationView.as_view(), name="send_verification"),
+    path("verify_code/", VerifyCodeView.as_view(), name="verify_code"),
 ]

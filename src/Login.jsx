@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef,useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./Login.css";
@@ -14,8 +14,19 @@ export default function Login() {
   const [view, setView] = useState("login");
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
+  const [verifyCooldown, setVerifyCooldown] = useState(0);
+  const registerNameRef = useRef(null);
+  const registerAccountRef = useRef(null);
 
   const navigate = useNavigate();
+
+  useEffect(() => {
+  if (verifyCooldown <= 0) return;
+  const timer = setInterval(() => {
+    setVerifyCooldown((s) => (s > 0 ? s - 1 : 0));
+  }, 1000);
+  return () => clearInterval(timer);
+}, [verifyCooldown]);
 
   /* -----------------------------
       1. 登入 API 呼叫
@@ -31,11 +42,10 @@ export default function Login() {
         },
         body: JSON.stringify({ account, password }),
       });
-
+      alert(res)
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        // 後端沒用 detail 就自己給個訊息
-        alert(err.detail || "登入失敗，請確認帳號密碼");
+        const { detail } = await res.json().catch(() => ({}));
+        alert(detail || "登入失敗，請確認帳號密碼");
         return;
       }
 
@@ -48,7 +58,7 @@ export default function Login() {
 
       navigate("/");
     } catch (err) {
-      console.error(err);
+      console.error("sd");
       alert("無法連線到伺服器");
     }
   };
@@ -64,6 +74,7 @@ export default function Login() {
     const name = form.elements["name"].value;
     const account = form.elements["account"].value;
     const password = form.elements["password"].value;
+    const code = form.elements["code"]?.value;
 
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
@@ -71,12 +82,12 @@ export default function Login() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, account, password }),
+        body: JSON.stringify({ name, account, password, code }),
       });
 
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert("註冊失敗：" + JSON.stringify(err));
+        const { detail } = await res.json().catch(() => ({}));
+        alert(detail ? `註冊失敗：${detail}` : "註冊失敗");
         return;
       }
 
@@ -85,6 +96,36 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       alert("無法連線到伺服器");
+    }
+  };
+
+  const onSubmitValidation = async (accountValue, nameValue) => {
+    const account =
+      (accountValue ?? registerAccountRef.current?.value ?? "").trim();
+
+    if (!account) {
+      alert("請先輸入姓名與學校帳號");
+      return;
+    }
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/auth/send_verification/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account }),
+      });
+
+      if (!res.ok) {
+        const {detail} = await res.json().catch(() => ({}));
+        alert(detail || "驗證碼寄送失敗，請稍後再試");
+        return;
+
+      }
+      setVerifyCooldown(300);
+      alert("驗證碼已寄出，請到信箱查收");
+    } catch (err) {
+      console.error(err);
+      alert(err);
     }
   };
 
@@ -166,18 +207,45 @@ export default function Login() {
                     className="login-input"
                     type="text"
                     name="name"
+                    ref={registerNameRef}
                     placeholder="請輸入姓名"
                     required
                   />
 
                   <label className="login-label">學校帳號</label>
-                  <input
-                    className="login-input"
-                    type="text"
-                    name="account"
-                    placeholder="請輸入學校帳號"
-                    required
-                  />
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        className="login-input"
+                        type="text"
+                        name="account"
+                        ref={registerAccountRef}
+                        placeholder="請輸入學校帳號"
+                        required
+                      />
+                      <button
+                        id="validationbtn"
+                        type="button"
+                        className="cb-btn ghost"
+                        onClick={() =>
+                          onSubmitValidation(
+                            registerAccountRef.current?.value,
+                            registerNameRef.current?.value
+                          )
+                        }
+                        disabled={verifyCooldown > 0}
+                        style={
+                          verifyCooldown > 0
+                            ? {
+                                backgroundColor: "#ccc",
+                                color: "#555",
+                                borderColor: "#aaa",
+                              }
+                            : undefined
+                        }
+                      >
+                        {verifyCooldown > 0 ? `${verifyCooldown}s` : "發送驗證碼"}
+                      </button>
+                    </div>
 
                   <label className="login-label">密碼</label>
                   <input
@@ -193,13 +261,11 @@ export default function Login() {
                     <input
                       className="login-input"
                       type="text"
+                      name="code"
                       placeholder="請輸入驗證碼"
                       required
                       style={{ flex: 1 }}
                     />
-                    <button type="button" className="cb-btn ghost">
-                      發送驗證碼
-                    </button>
                   </div>
                   
                   <div

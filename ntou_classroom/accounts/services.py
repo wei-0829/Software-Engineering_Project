@@ -1,86 +1,93 @@
 # accounts/services.py
-import re
 import logging
 import random
+import re
 from django.conf import settings
-from django.core.mail import send_mail, BadHeaderError
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
+from django.core.mail import BadHeaderError, send_mail
+from django.http import HttpResponse
 from django.utils import timezone
-from accounts.models import EmailVerification
 
 logger = logging.getLogger(__name__)
-EMAIL_PATTERN = re.compile(r'^[A-Za-z0-9._%+-]+@email\.ntou\.edu\.tw$', re.IGNORECASE)
+
+# 僅允許海大 email
+EMAIL_PATTERN = re.compile(r"^[A-Za-z0-9._%+-]+@email\.ntou\.edu\.tw$", re.IGNORECASE)
+
+# Redis/Cache 設定
+CODE_TTL_SECONDS = getattr(settings, "EMAIL_CODE_TTL", 300)
+MAX_ATTEMPTS = getattr(settings, "EMAIL_CODE_MAX_ATTEMPTS", 3)
+CACHE_PREFIX = getattr(settings, "EMAIL_CODE_CACHE_PREFIX", "email_verification")
 
 
-def verify_code(email, user_input_code):
-    # 1. 取資料
-    try:
-        record = EmailVerification.objects.get(email=email)
-    except EmailVerification.DoesNotExist:
-        raise ValidationError("請先寄送驗證碼")
+def _cache_key(email: str) -> str:
+    return f"{CACHE_PREFIX}:{email.lower()}"
 
-    # 2. 過期
-    if record.is_expired():
-        record.delete()
-        raise ValidationError("驗證碼已過期，請重新寄送")
-
-    # 3. 錯誤次數過多
-    if record.attempts >= 3:
-        record.delete()
-        raise ValidationError("嘗試次數過多，請重新寄送驗證碼")
-
-    # 4. 比對成功
-    if record.code == user_input_code:
-        record.delete()
-        return True
-
-    # 5. 比對失敗 → 次數 +1
-    record.attempts += 1
-    record.save()
-    raise ValidationError("驗證碼錯誤")
 
 def generate_code():
     return str(random.randint(100000, 999999))
 
 
-def validate_ntou_email(email):
+def validate_ntou_email(email: str):
     if not EMAIL_PATTERN.match(email):
         raise ValidationError("請使用海大學校帳號")
 
 
-def send_verification(email, code=None, subject="教室租借系統-郵件驗證", from_email=None):
+def send_verification(email, subject="教室租借系統-郵件驗證", from_email=None):
+    """
+    寄送驗證碼並將驗證資料存到 Redis（透過 Django cache）。
+    """
     validate_ntou_email(email)
-
-    if code is None:
-        code = generate_code()
-
-    if from_email is None:
-        from_email = getattr(settings, "EMAIL_HOST_USER", None)
-        if not from_email:
-            raise ValueError("未設定寄件者 email (DEFAULT_FROM_EMAIL or EMAIL_HOST_USER)")
+    if(cache.get(_cache_key(email))):
+        raise ValidationError("請勿重複寄送驗證碼")
+    code = generate_code()
+    from_email = getattr(settings, "EMAIL_HOST_USER", None)
 
     message = f"你的驗證碼是：{code}"
 
     try:
         sent = send_mail(subject, message, from_email, [email], fail_silently=False)
-
     except BadHeaderError:
         raise ValidationError("郵件標頭錯誤")
     except Exception as e:
-        # 可加 logging
         logger.exception("寄信失敗: %s", e)
         raise ValidationError("寄信失敗，請稍後再試")
 
-    # Django send_mail 回傳成功寄出去的信件數
     if sent == 0:
         raise ValidationError("郵件寄送失敗（可能是收件者不存在）")
 
-    # 儲存驗證碼
-    EmailVerification.objects.update_or_create(
-    email=email,
-    defaults={
-        "code": code,
-        "created_at": timezone.now(),
-        "attempts": 0
-    }
-)
+    expires_at = timezone.now().timestamp() + CODE_TTL_SECONDS
+    record = {"code": code, "expires_at": expires_at, "attempts": 0}
+    cache.set(_cache_key(email), record, timeout=CODE_TTL_SECONDS)
+    return True
+
+
+def verify_code(email, user_input_code):
+    """
+    從 Redis/Cache 驗證驗證碼，失敗次數達上限會清除。
+    """
+    record = cache.get(_cache_key(email))
+    if not record:
+        raise ValidationError("請先寄送驗證碼")
+
+    now_ts = timezone.now().timestamp()
+    expires_at = record.get("expires_at", 0)
+
+    if now_ts > expires_at:
+        cache.delete(_cache_key(email))
+        raise ValidationError("驗證碼已過期，請重新寄送")
+
+    if record.get("code") == user_input_code:
+        cache.delete(_cache_key(email))
+        return True
+
+    # 錯誤處理與嘗試次數
+    attempts = int(record.get("attempts", 0)) + 1
+    remaining = max(int(expires_at - now_ts), 1)
+    if attempts >= MAX_ATTEMPTS:
+        cache.delete(_cache_key(email))
+        raise ValidationError("嘗試次數過多，請重新寄送驗證碼")
+
+    record.update({"attempts": attempts})
+    cache.set(_cache_key(email), record, timeout=remaining)
+    raise ValidationError("驗證碼錯誤")
