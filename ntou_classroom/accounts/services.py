@@ -88,12 +88,12 @@ def verify_code(email, user_input_code,prefix):
         return True
 
     # 錯誤處理與嘗試次數
-    attempts = int(record.get("attempts", 0)) + 1
     remaining = max(int(expires_at - now_ts), 1)
     if attempts >= MAX_ATTEMPTS:
         cache.delete(_cache_key(prefix+email))
         raise ValidationError("嘗試次數過多，請重新寄送驗證碼")
 
+    attempts = int(record.get("attempts", 0)) + 1
     record.update({"attempts": attempts})
     cache.set(_cache_key(prefix+email), record, timeout=remaining)
     raise ValidationError("驗證碼錯誤")

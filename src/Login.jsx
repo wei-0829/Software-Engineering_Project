@@ -171,13 +171,17 @@ export default function Login() {
     const form = e.target;
     const account = form.elements["account"].value;
     const password = form.elements["password"].value;
+    const password_check=form.elements["password_check"].value
     const code = form.elements["code"].value;
 
     if (!account || !password || !code) {
       alert("請填寫帳號、驗證碼、新密碼");
       return;
     }
-    
+    if(password!=password_check){
+      alert("兩次輸入密碼不同")
+        return
+    }
     try {
       const res = await fetch("http://127.0.0.1:8000/api/auth/verify_change_pwd/", {
         method: "POST",
@@ -365,6 +369,7 @@ export default function Login() {
                     type="text"
                     name="account"
                     ref={registerAccountRef}
+                    onChange={() => setVerifyCooldown(0)}
                     placeholder="請輸入學校帳號"
                     required
                   />
@@ -419,6 +424,7 @@ export default function Login() {
                   <input
                     className="login-input"
                     type="password"
+                    name="password_check"
                     placeholder="請再次輸入新密碼"
                     required
                   />

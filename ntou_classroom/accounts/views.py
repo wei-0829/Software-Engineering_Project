@@ -160,6 +160,11 @@ class VerifyChangePasswordView(APIView):
             return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
         if not password:
             return Response({"detail": "缺少新密碼"}, status=status.HTTP_400_BAD_REQUEST)
+        user = User.objects.filter(username=account).first()
+        if not user:
+            return Response({"detail": "找不到使用者"}, status=status.HTTP_404_NOT_FOUND)
+        if user.check_password(password):
+            return Response({"detail":"無法使用相同密碼"},status=status.HTTP_400_BAD_REQUEST)
         try:
             valid_password(password)
             verify_code(account, code,"changepwd:")
@@ -167,12 +172,6 @@ class VerifyChangePasswordView(APIView):
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
             return Response({"detail": "驗證碼驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-
-        user = User.objects.filter(username=account).first()
-        if user.check_password(password):
-            return Response({"detail":"無法使用相同密碼"},status=status.HTTP_400_BAD_REQUEST)
-        if not user:
-            return Response({"detail": "找不到使用者"}, status=status.HTTP_404_NOT_FOUND)
 
         # 更新密碼，若有傳 name 也一併更新
         user.set_password(password)
