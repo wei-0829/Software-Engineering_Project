@@ -147,29 +147,86 @@ export default function ClassroomBooking() {
     setSelectedRoom(null);
   };
 
-  /** 預約事件 */
-  const handleReserve = ({ room, day, start, end }) => {
-    const next = { ...occupiedMap };
-    const prev = next[room] || [];
-    next[room] = [...prev, { day, start, end }];
-    setOccupiedMap(next);
+  /** 預約事件：同時打後端 /api/reservations/ */
+// 在 ClassroomBooking.jsx 裡，原本的 handleReserve 換成這個
 
-    setHistory((old) => [
-      ...old,
-      {
-        ts: new Date().toISOString(),
-        buildingName: selectedBuilding?.name || "",
-        buildingCode: selectedBuilding?.code || "",
-        room,
-        day,
-        start,
-        end,
-        status: "待確認", // 👈 新增狀態
-      },
-    ]);
+  const handleReserve = async ({ room, day, start, end }) => {
+    const token = localStorage.getItem("access_token");
+    if (!token) {
+      alert("請先登入後再預約");
+      navigate("/login");
+      return;
+    }
 
-    alert(`已送出預約申請：${room}｜週${WEEK_DAYS[day - 1]} ${start}:00–${end}:00`);
+    //  把「週幾」換成真正日期（這一週的週一 + (day-1)）
+    const base = new Date();               // 今天
+    let weekday = base.getDay();           // 0(週日)~6(週六)
+    if (weekday === 0) weekday = 7;        // 改成 1~7，週一=1
+    base.setDate(base.getDate() - (weekday - 1)); // 推回本週週一
+    base.setHours(0, 0, 0, 0);
+
+    const d = new Date(base);
+    d.setDate(base.getDate() + (day - 1)); // 加上 day-1，變成該週的那一天
+    const dateString = d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+
+    // 組後端要的 payload
+    const payload = {
+      classroom: room,                 // room_code（例如 "CS201"）
+      date: dateString,               // 例如 "2025-11-24"
+      time_slot: `${start}-${end}`,   // 例如 "1-2" / "3-4" / "8-10" 自己約定
+      reason: "",                     // 先留空，有需要再加欄位
+    };
+
+    try {
+      const res = await fetch("http://127.0.0.1:8000/api/reservations/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,   // 🔑 JWT 放這裡
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json().catch(() => ({}));
+      console.log("reserve response =", res.status, data);
+
+      if (!res.ok) {
+        alert("預約失敗：" + JSON.stringify(data));
+        return;
+      }
+
+      // 後端成功 → 再更新前端畫面
+      setOccupiedMap((prevMap) => {
+        const next = { ...prevMap };
+        const prev = next[room] || [];
+        next[room] = [...prev, { day, start, end }];
+        return next;
+      });
+
+      setHistory((old) => [
+        ...old,
+        {
+          ts: new Date().toISOString(),
+          buildingName: selectedBuilding?.name || "",
+          buildingCode: selectedBuilding?.code || "",
+          room,
+          day,
+          start,
+          end,
+          status: data.status || "pending", // 後端回什麼就用什麼
+        },
+      ]);
+
+      alert(
+        `預約成功：${room}｜週${WEEK_DAYS[day - 1]} ${start}:00–${end}:00（日期 ${dateString}）`
+      );
+    } catch (err) {
+      console.error(err);
+      alert("預約失敗：無法連線到伺服器");
+    }
   };
+
+
 
   /** 歷史頁 */
   const HistoryPanel = () => (
