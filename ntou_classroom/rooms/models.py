@@ -1,85 +1,4 @@
-from django.db import models
-
-class Building(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-    code = models.CharField(max_length=10, unique=True, blank=True)
-
-    def __str__(self):
-        return f"{self.name} ({self.code})" if self.code else self.name
-
-
-class Equipment(models.Model):
-    name = models.CharField(max_length=100, unique=True)
-
-    def __str__(self):
-        return self.name
-
-
-
-class Room(models.Model):
-    name = models.CharField(max_length=50)
-    building = models.ForeignKey(Building, on_delete=models.CASCADE, related_name="rooms")
-    capacity = models.PositiveIntegerField(default=30)
-    equipments = models.ManyToManyField(Equipment, blank=True)
-    location = models.CharField(max_length=200, blank=True)
-
-    class Meta:
-        unique_together = ("building", "name")
-        indexes = [models.Index(fields=["building", "capacity"])]
-
-    def __str__(self):
-        return f"{self.building.name} {self.name}"
-
-from django.db import models
-
-
-class Classroom(models.Model):
-    # 例如 E201、CS301
-    room_code = models.CharField(max_length=20, unique=True, verbose_name="教室代碼")
-
-    # 例如 資訊館、第一教學大樓
-    building = models.CharField(max_length=50, verbose_name="大樓")
-
-    # 顯示給使用者看的名稱，可留空
-    name = models.CharField(max_length=100, blank=True, verbose_name="教室名稱")
-
-    # 容納人數
-    capacity = models.PositiveIntegerField(verbose_name="容納人數")
-
-    # 普通教室 / 電腦教室 / 會議室 ...
-    ROOM_TYPE_CHOICES = [
-        ('NORMAL', '普通教室'),
-        ('LAB', '電腦教室'),
-        ('MEETING', '會議室'),
-        ('OTHER', '其他'),
-    ]
-    room_type = models.CharField(
-        max_length=20,
-        choices=ROOM_TYPE_CHOICES,
-        default='NORMAL',
-        verbose_name="教室類型",
-    )
-
-    # 簡單文字描述設備
-    equipment = models.TextField(blank=True, verbose_name="設備說明")
-
-    # 是否開放借用
-    is_available = models.BooleanField(default=True, verbose_name="是否可借用")
-
-    # 備註
-    note = models.TextField(blank=True, verbose_name="備註")
-
-    # 建立 / 更新時間（當 log 用）
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = "教室"
-        verbose_name_plural = "教室"
-
-    def __str__(self):
-        return f"{self.building} {self.room_code}"
-
+# rooms/models.py
 from django.db import models
 
 
@@ -101,6 +20,7 @@ class Classroom(models.Model):
     # 教室代號（如 CS201、E1-204）
     room_code = models.CharField(
         max_length=20,
+        unique=True,            # 給前端 slug_field 用
         verbose_name="教室代碼",
     )
 

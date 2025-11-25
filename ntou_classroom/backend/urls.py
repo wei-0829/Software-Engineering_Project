@@ -23,5 +23,5 @@ urlpatterns = [
     #   POST /api/auth/register/
     #   POST /api/auth/login/
     path("api/auth/", include("accounts.urls")),
-    path("api/reservations/", include("reservations.urls")),
+    path("api/", include("reservations.urls")),
 ]
