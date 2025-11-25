@@ -119,12 +119,31 @@ export default function ClassroomBooking() {
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
   const [showHistory, setShowHistory] = useState(false);
-  const [showRequests, setShowRequests] = useState(false); // 👈 新增：租借請求管理頁
+  const [showRequests, setShowRequests] = useState(false); //新增：租借請求管理頁
   const [history, setHistory] = useState([]);
-  const [isAdmin, setIsAdmin] = useState(true); // 👈 模擬是否為管理員（可改成後端登入判斷）
+  const [isAdmin, setIsAdmin] = useState(true); //模擬是否為管理員（可改成後端登入判斷）
 
   const navigate = useNavigate();
   const [occupiedMap, setOccupiedMap] = useState(PRESET_OCCUPIED);
+  const [username, setUsername] = useState(() => {
+    return localStorage.getItem("username");
+  });
+
+    const handleBackToBooking = () => {
+    setShowHistory(false);
+    setShowRequests(false);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("access_token");
+    localStorage.removeItem("refresh_token");
+    localStorage.removeItem("username");
+    setUsername(null);
+    setShowHistory(false);
+    setShowRequests(false);
+  };
+
+
 
   const filteredBuildings = useMemo(() => {
     const kw = q.trim().toLowerCase();
@@ -401,28 +420,69 @@ export default function ClassroomBooking() {
       {/* 主畫面 */}
       <section className="cb-main">
         <div className="cb-hero">
-          <div style={{ display: "flex", gap: 10 }}>
-            <button
-              className="cb-login-btn"
-              onClick={() => setShowHistory((v) => !v)}
-            >
-              {showHistory ? "返回預約" : "歷史紀錄"}
-            </button>
-
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => setShowRequests((v) => !v)}
-              >
-                {showRequests ? "返回預約" : "確認租借"}
+          <div
+            style={{
+            display: "flex",
+            gap: 10,
+            marginLeft: "auto",
+            alignItems: "center",
+          }}
+        >
+            {/* 返回預約：獨立一顆，只在非預約主畫面時出現 */}
+            {(showHistory || showRequests) && (
+              <button className="cb-login-btn" onClick={handleBackToBooking}>
+                返回預約
               </button>
             )}
 
-            <button className="cb-login-btn" onClick={() => navigate("/login")}>
-              登入
-            </button>
-          </div>
-        </div>
+      {/* 歷史紀錄按鈕：固定顯示，只控制 showHistory */}
+      <button
+        className="cb-login-btn"
+        onClick={() => {
+          setShowHistory((v) => !v);
+          if (showRequests) setShowRequests(false);
+        }}
+      >
+        歷史紀錄
+      </button>
+
+      {/* 確認租借按鈕：管理員才看得到 */}
+      {isAdmin && (
+        <button
+          className="cb-login-btn"
+          onClick={() => {
+            setShowRequests((v) => !v);
+            if (showHistory) setShowHistory(false);
+          }}
+        >
+          確認租借
+        </button>
+      )}
+
+      {/*  登入狀態切換：沒登入 → 登入按鈕；有登入 → 使用者名稱 + 登出 */}
+      {username ? (
+        <>
+          <button
+            className="cb-login-btn"
+            style={{ cursor: "default", opacity: 0.9 }}
+            disabled
+          >
+            {username}
+          </button>
+
+          <button className="cb-login-btn" onClick={handleLogout}>
+            登出
+          </button>
+        </>
+      ) : (
+        <button className="cb-login-btn" onClick={() => navigate("/login")}>
+          登入
+        </button>
+      )}
+
+    </div>
+  </div>
+
 
         <div className="cb-card">
           <h1 className="cb-card-title">
