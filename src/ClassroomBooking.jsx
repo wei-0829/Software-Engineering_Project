@@ -459,6 +459,16 @@ export default function ClassroomBooking() {
         </button>
       )}
 
+      {/* ⭐ 新增：編輯教室按鈕（只給管理員看） */}
+      {isAdmin && (
+        <button
+          className="cb-login-btn"
+          onClick={() => navigate("/editing-classroom")}
+        >
+          編輯教室
+        </button>
+      )}
+
       {/*  登入狀態切換：沒登入 → 登入按鈕；有登入 → 使用者名稱 + 登出 */}
       {username ? (
         <>
