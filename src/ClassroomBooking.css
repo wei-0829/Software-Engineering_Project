@@ -63,8 +63,6 @@
   display:inline-flex; align-items:center; justify-content:center;
 }
 .cb-building-name{ color:#1e293b; font-weight:700; }
-.cb-tree-room .cb-room-name{ font-weight:700; color:#0f172a; }
-.cb-tree-room.is-active{ background:#eaf1ff; box-shadow: inset 0 0 0 1px #cfe0ff; }
 .cb-tree-empty{
   margin:8px 8px 0; padding:12px; font-size:14px; color:#6b7280;
   border:1px dashed #cbd5e1; border-radius:10px; background:#f8fafc;
@@ -121,33 +119,13 @@
 }
 .cb-list.dashed li:hover{ transform: translateX(2px); }
 .cb-list.dashed li:hover::before{ transform: scale(1.12); }
-.cb-list.dashed li:last-child{ border-bottom:none; }
 .cb-divider{ height:1px; background:var(--border); margin:16px 0; }
-.cb-actions{ display:flex; justify-content:flex-end; margin-top:8px; }
-.cb-btn{
-  border:0; background:var(--brand-2); color:#fff; padding:10px 16px; border-radius:10px; font-weight:800; cursor:pointer;
-  box-shadow:0 10px 20px rgba(37,99,235,.25);
-  transition: transform .12s ease, box-shadow .12s ease, filter .12s ease;
-}
-.cb-btn:hover{ filter:brightness(.96); transform: translateY(-1px); box-shadow:0 14px 26px rgba(37,99,235,.28); }
-
-/* 這兩個目前嵌在教室卡片中使用 */
-.login-inline{ max-width:460px; padding:8px 4px 4px; }
-.form-row{ margin:12px 0; display:flex; flex-direction:column; gap:6px; }
-.form-row label{ font-weight:800; }
-.form-row input{
-  padding:12px; border:1px solid #d1d5db; border-radius:10px; font-size:15px; background:#fff;
-}
-
-/* 響應式 */
-@media (max-width: 1000px){
-  .cb-sidebar{ display:none; }
-  .cb-card{ margin:-60px 16px 24px; }
-}
 
 /* ====== WeekCalendar（輕量週曆） ====== */
 .wk-wrap{ margin-top:8px; }
-.wk-head, .wk-row{ display:grid; grid-template-columns: 64px repeat(7, 1fr); gap:8px; align-items:center; }
+.wk-head, .wk-row{
+  display:grid; grid-template-columns: 64px repeat(7, 1fr); gap:8px; align-items:center;
+}
 .wk-head{ margin-bottom:8px; }
 .wk-hour{ font-size:12px; color:#6b7280; text-align:right; padding-right:6px; }
 .wk-day{ font-weight:800; color:#0f3b8f; text-align:center; }
@@ -163,5 +141,143 @@
   border-color:#d1d5db; cursor:not-allowed;
 }
 .wk-actions{ margin-top:12px; display:flex; justify-content:flex-end; }
-.wk-head-empty{ visibility:hidden; }
-.wk-head-empty{ visibility:hidden; }
+.wk-room-banner{
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #eef6ff;
+  border: 1px solid #cfe0ff;
+  font-weight: 800;
+  color: #0f3b8f;
+}
+
+/* ===== 進階搜尋列（上方） ===== */
+.cb-filter-bar {
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid #dbe4ff;
+  background: #f8fbff;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: flex-end;
+}
+
+.cb-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 170px;
+  flex: 1 1 180px;
+}
+
+.cb-filter-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+/* checkbox 區塊 */
+.cb-filter-checks {
+  flex: 2 1 260px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 14px;
+  align-items: center;
+  padding-top: 4px;
+  padding-left: 12px;
+  margin-left: 4px;
+  border-left: 1px dashed #d1d5db;
+}
+
+.cb-filter-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #374151;
+}
+
+.cb-filter-check input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+}
+
+/* 清除按鈕 */
+.cb-filter-bar .cb-btn {
+  padding-inline: 14px;
+  white-space: nowrap;
+}
+
+/* ===== 教室卡片 ===== */
+.cb-room-grid {
+  margin-top: 8px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.cb-room-card {
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(15,23,42,0.06);
+  transition: transform .12s ease, box-shadow .12s ease, border-color .12s ease;
+}
+
+.cb-room-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 26px rgba(15,23,42,0.12);
+  border-color: #bfdbfe;
+}
+
+.cb-room-card-active {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 2px rgba(37,99,235,.35);
+  background: #eaf1ff;
+}
+
+.cb-room-code {
+  font-size: 18px;
+  font-weight: 900;
+  color: #1d4ed8;
+}
+
+.cb-room-name {
+  margin-top: 2px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.cb-room-capacity {
+  margin-top: 4px;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.cb-room-tags {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.cb-tag {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: #e0edff;
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* disabled 按鈕 */
+.cb-btn:disabled{
+  opacity: .55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
