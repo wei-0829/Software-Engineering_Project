@@ -86,6 +86,28 @@
   transform: translateY(0);
 }
 
+/* ========= 表格裡「設備」欄位的排版 ========= */
+
+.cb-equip-cell {
+  display: grid;
+  grid-template-columns: repeat(2, auto); /* 每行兩個 */
+  gap: 6px 20px;                          /* 上下、左右間距 */
+  align-items: center;
+  font-size: 14px;
+}
+
+.cb-equip-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
+}
+
+.cb-equip-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
 /* ========= 下方「新增教室」輸入列 ========= */
 
 .cb-form-row {
@@ -121,6 +143,28 @@
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
 }
 
+/* 新增教室的「設備」區塊 */
+
+.cb-equip-new {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.cb-equip-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.cb-equip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto); /* 每行兩個 */
+  gap: 6px 18px;
+}
+
+/* 新增教室按鈕 */
 .cb-form-row .cb-btn {
   padding: 12px 26px;
   font-size: 17px;
@@ -146,6 +190,11 @@
 
   .cb-form-row .cb-search-input {
     width: 100%;
+  }
+
+  .cb-equip-cell,
+  .cb-equip-grid {
+    grid-template-columns: 1fr; /* 小螢幕改成一行一個，比較好點 */
   }
 }
 

@@ -13,98 +13,111 @@ const BUILDINGS = [
   { code: "GH2", name: "綜合二館", rooms: ["GH201", "GH202"] },
 ];
 
-/** 先用前端假資料描述教室資訊 */
+/** 先用前端假資料描述教室資訊（設備改為：投影機、白板、網路、麥克風） */
 const ROOM_META = {
   INS201: {
     name: "資工系電腦教室",
     capacity: 40,
     projector: true,
-    teacherPC: true,
-    wheelchair: false,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   INS202: {
     name: "資工系普通教室",
     capacity: 30,
     projector: true,
-    teacherPC: false,
-    wheelchair: false,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   INS301: {
     name: "專題討論室",
     capacity: 20,
     projector: false,
-    teacherPC: true,
-    wheelchair: false,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   INS302: {
     name: "會議教室",
     capacity: 25,
     projector: true,
-    teacherPC: true,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: true,
   },
   ECG301: {
     name: "電資大樓電腦教室",
     capacity: 60,
     projector: true,
-    teacherPC: true,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: true,
   },
   ECG302: {
     name: "電資大樓普通教室",
     capacity: 50,
     projector: true,
-    teacherPC: false,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   ECG310: {
     name: "視聽教室",
     capacity: 80,
     projector: true,
-    teacherPC: true,
-    wheelchair: true,
+    whiteboard: false,
+    network: true,
+    mic: true,
   },
   LIB410: {
     name: "圖書館研討室 A",
     capacity: 12,
     projector: false,
-    teacherPC: false,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   LIB411: {
     name: "圖書館研討室 B",
     capacity: 16,
     projector: false,
-    teacherPC: false,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   GH101: {
     name: "綜一普通教室 101",
     capacity: 45,
     projector: true,
-    teacherPC: false,
-    wheelchair: false,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   GH102: {
     name: "綜一普通教室 102",
     capacity: 45,
     projector: true,
-    teacherPC: false,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
   GH201: {
     name: "綜二講堂 201",
     capacity: 120,
     projector: true,
-    teacherPC: true,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: true,
   },
   GH202: {
     name: "綜二普通教室 202",
     capacity: 60,
     projector: true,
-    teacherPC: false,
-    wheelchair: true,
+    whiteboard: true,
+    network: true,
+    mic: false,
   },
 };
 
@@ -219,9 +232,12 @@ export default function ClassroomBooking() {
   /** 進階搜尋條件（教室用） */
   const [keyword, setKeyword] = useState(""); // 關鍵字：201 也能抓到 INS201
   const [minCapacity, setMinCapacity] = useState(""); // 最少人數
+
+  // 設備條件：投影機 / 白板 / 網路 / 麥克風
   const [needProjector, setNeedProjector] = useState(false);
-  const [needTeacherPC, setNeedTeacherPC] = useState(false);
-  const [needWheelchair, setNeedWheelchair] = useState(false);
+  const [needWhiteboard, setNeedWhiteboard] = useState(false);
+  const [needNetwork, setNeedNetwork] = useState(false);
+  const [needMic, setNeedMic] = useState(false);
 
   const [selectedBuilding, setSelectedBuilding] = useState(null);
   const [selectedRoom, setSelectedRoom] = useState(null);
@@ -251,8 +267,9 @@ export default function ClassroomBooking() {
     setKeyword("");
     setMinCapacity("");
     setNeedProjector(false);
-    setNeedTeacherPC(false);
-    setNeedWheelchair(false);
+    setNeedWhiteboard(false);
+    setNeedNetwork(false);
+    setNeedMic(false);
     setSelectedRoom(null);
   };
 
@@ -291,14 +308,23 @@ export default function ClassroomBooking() {
       // 人數
       if (minCap > 0 && (meta.capacity || 0) < minCap) return false;
 
-      // 設備
+      // 設備條件
       if (needProjector && !meta.projector) return false;
-      if (needTeacherPC && !meta.teacherPC) return false;
-      if (needWheelchair && !meta.wheelchair) return false;
+      if (needWhiteboard && !meta.whiteboard) return false;
+      if (needNetwork && !meta.network) return false;
+      if (needMic && !meta.mic) return false;
 
       return true;
     });
-  }, [selectedBuilding, keyword, minCapacity, needProjector, needTeacherPC, needWheelchair]);
+  }, [
+    selectedBuilding,
+    keyword,
+    minCapacity,
+    needProjector,
+    needWhiteboard,
+    needNetwork,
+    needMic,
+  ]);
 
   const resetSelection = () => {
     setSelectedBuilding(null);
@@ -495,7 +521,7 @@ export default function ClassroomBooking() {
             )}
           </div>
 
-          {/* 新增：大樓搜尋欄 */}
+          {/* 大樓搜尋欄 */}
           <div className="cb-search">
             <input
               className="cb-search-input"
@@ -669,21 +695,32 @@ export default function ClassroomBooking() {
                       />
                       有投影機
                     </label>
+
                     <label className="cb-filter-check">
                       <input
                         type="checkbox"
-                        checked={needTeacherPC}
-                        onChange={(e) => setNeedTeacherPC(e.target.checked)}
+                        checked={needWhiteboard}
+                        onChange={(e) => setNeedWhiteboard(e.target.checked)}
                       />
-                      有教師電腦
+                      有白板
                     </label>
+
                     <label className="cb-filter-check">
                       <input
                         type="checkbox"
-                        checked={needWheelchair}
-                        onChange={(e) => setNeedWheelchair(e.target.checked)}
+                        checked={needNetwork}
+                        onChange={(e) => setNeedNetwork(e.target.checked)}
                       />
-                      無障礙教室
+                      有網路
+                    </label>
+
+                    <label className="cb-filter-check">
+                      <input
+                        type="checkbox"
+                        checked={needMic}
+                        onChange={(e) => setNeedMic(e.target.checked)}
+                      />
+                      有麥克風
                     </label>
                   </div>
 
@@ -722,11 +759,14 @@ export default function ClassroomBooking() {
                             容納人數：約 {meta.capacity || "—"} 人
                           </div>
                           <div className="cb-room-tags">
-                            {meta.projector && <span className="cb-tag">投影機</span>}
-                            {meta.teacherPC && (
-                              <span className="cb-tag">教師電腦</span>
+                            {meta.projector && (
+                              <span className="cb-tag">投影機</span>
                             )}
-                            {meta.wheelchair && <span className="cb-tag">無障礙</span>}
+                            {meta.whiteboard && (
+                              <span className="cb-tag">白板</span>
+                            )}
+                            {meta.network && <span className="cb-tag">網路</span>}
+                            {meta.mic && <span className="cb-tag">麥克風</span>}
                           </div>
                         </div>
                       );
