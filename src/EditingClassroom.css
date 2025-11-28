@@ -1,0 +1,229 @@
+/* ========= 教室清單表格（放大版） ========= */
+
+.cb-table-wrap {
+  margin-top: 20px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.15);
+}
+
+/* 主表格 */
+.cb-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #ffffff;
+  font-size: 18px; /* 字體放大 */
+}
+
+/* 表頭 */
+.cb-table thead {
+  background: linear-gradient(90deg, #d7eaff, #ecf4ff);
+}
+
+.cb-table th {
+  padding: 18px 18px; /* 加高表頭高度 */
+  text-align: left;
+  font-weight: 800;
+  color: #1f2937;
+  border-bottom: 2px solid #d6e0f5;
+  letter-spacing: 0.05em;
+  font-size: 18px; /* 字體放大 */
+}
+
+/* 表身 */
+.cb-table td {
+  padding: 16px 18px; /* 每格變高 */
+  border-bottom: 1px solid #eef2ff;
+  color: #374151;
+  font-size: 17px; /* 字體放大 */
+}
+
+/* 斑馬紋 & hover */
+.cb-table tbody tr:nth-child(even) {
+  background: #f6f9ff;
+}
+
+.cb-table tbody tr:hover {
+  background: #eaf2ff;
+  transition: 0.15s ease;
+}
+
+/* ========= 表格中的輸入框（可容納人數） ========= */
+
+.cb-input-inline {
+  width: 110px;
+  padding: 10px 12px;
+  border-radius: 999px;
+  border: 2px solid #c4d3f7;
+  background: #f9fbff;
+  font-size: 17px;
+  text-align: right;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.cb-input-inline:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* ========= 表格內的按鈕（儲存 / 刪除） ========= */
+
+.cb-table .cb-btn {
+  padding: 10px 20px;
+  font-size: 16px;
+  border-radius: 999px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.2);
+  transition: transform 0.15s ease;
+}
+
+.cb-table .cb-btn:hover {
+  transform: translateY(-2px);
+}
+
+.cb-table .cb-btn:active {
+  transform: translateY(0);
+}
+
+/* ========= 表格裡「設備」欄位的排版 ========= */
+
+.cb-equip-cell {
+  display: grid;
+  grid-template-columns: repeat(2, auto); /* 每行兩個 */
+  gap: 6px 20px;                          /* 上下、左右間距 */
+  align-items: center;
+  font-size: 14px;
+}
+
+.cb-equip-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #374151;
+}
+
+.cb-equip-check input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
+/* ========= 下方「新增教室」輸入列 ========= */
+
+.cb-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: flex-end;
+  margin-top: 20px;
+}
+
+.cb-form-row label {
+  display: flex;
+  flex-direction: column;
+  font-size: 17px;
+  color: #374151;
+  font-weight: 600;
+}
+
+.cb-form-row .cb-search-input {
+  min-width: 240px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  border: 2px solid #cbd5f5;
+  background: #f9fbff;
+  font-size: 17px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.cb-form-row .cb-search-input:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.25);
+}
+
+/* 新增教室的「設備」區塊 */
+
+.cb-equip-new {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 220px;
+}
+
+.cb-equip-label {
+  font-size: 15px;
+  font-weight: 700;
+  color: #4b5563;
+}
+
+.cb-equip-grid {
+  display: grid;
+  grid-template-columns: repeat(2, auto); /* 每行兩個 */
+  gap: 6px 18px;
+}
+
+/* 新增教室按鈕 */
+.cb-form-row .cb-btn {
+  padding: 12px 26px;
+  font-size: 17px;
+  margin-top: 5px;
+  border-radius: 999px;
+}
+
+/* ========= 手機版 ========= */
+@media (max-width: 768px) {
+  .cb-table {
+    font-size: 16px;
+  }
+
+  .cb-input-inline {
+    width: 100px;
+    font-size: 16px;
+  }
+
+  .cb-form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .cb-form-row .cb-search-input {
+    width: 100%;
+  }
+
+  .cb-equip-cell,
+  .cb-equip-grid {
+    grid-template-columns: 1fr; /* 小螢幕改成一行一個，比較好點 */
+  }
+}
+
+/* ========= 頁面下方粗藍色貼底 Banner（固定版） ========= */
+
+.editing-footer {
+  position: fixed;              /* ★ 永遠貼在視窗底部 */
+  bottom: 0;
+  left: 0;
+
+  width: 100%;
+  height: 60px;                 /* 粗藍條 */
+
+  background: linear-gradient(
+    to bottom,
+    #3dc9ff 0%,
+    #1ca2ff 40%,
+    #0787ff 100%
+  );
+
+  display: flex;
+  align-items: center;          /* 垂直置中 */
+  padding-left: 20px;           /* 靠左距離 */
+
+  color: white;
+  font-size: 26px;              /* 字變大 */
+  font-weight: 800;
+  letter-spacing: 0.04em;
+
+  z-index: 999;                 /* ★ 確保在最上層，不被其他元素遮住 */
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.10);
+}
