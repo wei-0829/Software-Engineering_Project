@@ -3,13 +3,13 @@ from django.db import models
 
 
 class Classroom(models.Model):
-    # 校區 / 大樓
+    # 校區 / 大樓（對應前端代碼）
     BUILDINGS = [
-        ("CS", "資訊館"),
-        ("E1", "第一教學大樓"),
-        ("E2", "第二教學大樓"),
-        ("M", "管理學院"),
-        ("S", "理學院"),
+        ("INS", "資工系館"),
+        ("ECG", "電資暨綜合教學大樓"),
+        ("LIB", "圖書館大樓"),
+        ("GH1", "綜合一館"),
+        ("GH2", "綜合二館"),
     ]
     building = models.CharField(
         max_length=10,
