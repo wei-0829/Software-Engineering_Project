@@ -23,5 +23,14 @@ urlpatterns = [
     #   POST /api/auth/register/
     #   POST /api/auth/login/
     path("api/auth/", include("accounts.urls")),
+    
+    # 預約相關 API
     path("api/", include("reservations.urls")),
+    
+    # 教室查詢相關 API
+    # rooms/urls.py 會提供：
+    #   GET /api/rooms/classrooms/
+    #   GET /api/rooms/classrooms/{room_code}/
+    #   GET /api/rooms/classrooms/buildings/
+    path("api/rooms/", include("rooms.urls")),
 ]

@@ -3,6 +3,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer
@@ -99,6 +100,36 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class RefreshTokenView(APIView):
+    """
+    POST /api/auth/refresh/
+    - 使用 refresh token 取得新的 access token
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "缺少 refresh token"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            return Response(
+                {
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK,
+            )
+        except TokenError as e:
+            return Response(
+                {"detail": "無效或過期的 refresh token"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class SendVerificationView(APIView):

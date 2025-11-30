@@ -10,7 +10,6 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 
-import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -79,6 +78,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
+
 ROOT_URLCONF = "backend.urls"
 
 TEMPLATES = [
@@ -102,36 +102,31 @@ WSGI_APPLICATION = "backend.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.mysql",
+        "NAME": "defaultdb",
+        "USER": "avnadmin",
+        "PASSWORD": "AVNS_BHCgAUTb1pAtKnVpf8U",
+        "HOST": "mysql-238322ff-softwareengineering11401-9faa.g.aivencloud.com",
+        "PORT": "25779",
+        "OPTIONS": { 
+            "charset": "utf8mb4",
+        },
     }
 }
 
-# Redis 快取（供驗證碼使用）
+
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://:1Pb33UABZHqQTkisoRgo1S7xgW5tZTD5@redis-12637.crce178.ap-east-1-1.ec2.cloud.redislabs.com:12637",
+        "LOCATION": "redis://default:Fs7K1DH7sqBaS48yd71AdWVZLfry7rH6@redis-10796.crce264.ap-east-1-1.ec2.cloud.redislabs.com:10796",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
     }
 }
-
-# CORS 設定（允許前端 5173 連線）
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-]
-
-# 驗證碼設定
-EMAIL_CODE_TTL = 300  # seconds
-EMAIL_CODE_MAX_ATTEMPTS = 3
-EMAIL_CODE_CACHE_PREFIX = "email_verification"
-
-
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 
@@ -150,13 +145,21 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+# CORS 設定（允許前端 5173 連線）
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+]
 
+# 驗證碼設定
+EMAIL_CODE_TTL = 300  # seconds
+EMAIL_CODE_MAX_ATTEMPTS = 3
+EMAIL_CODE_CACHE_PREFIX = "email_verification"
 # Internationalization
 # https://docs.djangoproject.com/en/5.2/topics/i18n/
 
 LANGUAGE_CODE = "zh-hant"
 
-# 設定為台灣時區（UTC+8）
 TIME_ZONE = "Asia/Taipei"
 
 USE_I18N = True
@@ -172,4 +175,5 @@ STATIC_URL = "static/"
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
 
+DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"

@@ -2,6 +2,7 @@ import { useState, useRef,useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./Login.css";
+import { API_ENDPOINTS } from "./config/api";
 
 /*
   Login.jsx  
@@ -35,7 +36,7 @@ export default function Login() {
     e.preventDefault();
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+      const res = await fetch(API_ENDPOINTS.login(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -78,7 +79,7 @@ export default function Login() {
     const code = form.elements["code"]?.value;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+      const res = await fetch(API_ENDPOINTS.register(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
