@@ -1,19 +1,33 @@
 // ClassroomBooking.jsx
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./ClassroomBooking.css";
+import { API_ENDPOINTS } from "./config/api";
 
-/** 大樓清單 */
-const BUILDINGS = [
-  { code: "INS", name: "資工系館", rooms: ["INS201", "INS202", "INS301", "INS302"] },
-  { code: "ECG", name: "電資暨綜合教學大樓", rooms: ["ECG301", "ECG302", "ECG310"] },
-  { code: "LIB", name: "圖書館大樓", rooms: ["LIB410", "LIB411"] },
-  { code: "GH1", name: "綜合一館", rooms: ["GH101", "GH102"] },
-  { code: "GH2", name: "綜合二館", rooms: ["GH201", "GH202"] },
-];
+const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
+const START_HOUR = 8;
+const END_HOUR = 21;
 
-/** 先用前端假資料描述教室資訊（設備改為：投影機、白板、網路、麥克風） */
+// 輔助函數：取得本週的週一
+function getWeekStart() {
+  const today = new Date();
+  const day = today.getDay();
+  const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+  const monday = new Date(today.setDate(diff));
+  monday.setHours(0, 0, 0, 0);
+  return monday;
+}
+
+// 輔助函數：取得本週的週日
+function getWeekEnd() {
+  const monday = getWeekStart();
+  const sunday = new Date(monday);
+  sunday.setDate(monday.getDate() + 6);
+  return sunday;
+}
+
+// 保留舊的 ROOM_META 作為備用（未來可移除）
 const ROOM_META = {
   INS201: {
     name: "資工系電腦教室",
@@ -121,22 +135,6 @@ const ROOM_META = {
   },
 };
 
-const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
-const START_HOUR = 8;
-const END_HOUR = 21;
-
-const PRESET_OCCUPIED = {
-  INS201: [
-    { day: 1, start: 10, end: 12 },
-    { day: 3, start: 14, end: 16 },
-  ],
-  INS202: [
-    { day: 2, start: 9, end: 11 },
-    { day: 5, start: 13, end: 15 },
-  ],
-  ECG301: [{ day: 4, start: 8, end: 10 }],
-};
-
 function expandBlocks(blocks) {
   const set = new Set();
   blocks.forEach(({ day, start, end }) => {
@@ -226,6 +224,10 @@ function WeekCalendar({ room, occupied, onReserve }) {
 export default function ClassroomBooking() {
   const navigate = useNavigate();
 
+  // 從 API 載入的資料
+  const [buildings, setBuildings] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+
   /** 側邊「大樓搜尋」用 */
   const [buildingSearch, setBuildingSearch] = useState("");
 
@@ -244,24 +246,129 @@ export default function ClassroomBooking() {
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRequests, setShowRequests] = useState(false); // 租借請求管理頁
-  const [history, setHistory] = useState([]);
+  const [history, setHistory] = useState(() => {
+    // 從 localStorage 載入歷史紀錄
+    const saved = localStorage.getItem("reservation_history");
+    return saved ? JSON.parse(saved) : [];
+  });
   const [isAdmin, setIsAdmin] = useState(true); // 模擬是否為管理員（可改成後端登入判斷）
 
-  const [occupiedMap, setOccupiedMap] = useState(PRESET_OCCUPIED);
+  const [occupiedMap, setOccupiedMap] = useState({});
   const [username, setUsername] = useState(() => {
     return localStorage.getItem("username");
   });
 
+  // 當 history 改變時，儲存到 localStorage
+  useEffect(() => {
+    localStorage.setItem("reservation_history", JSON.stringify(history));
+  }, [history]);
+
+  // 載入大樓列表
+  useEffect(() => {
+    const fetchBuildings = async () => {
+      try {
+        const res = await fetch(API_ENDPOINTS.buildings());
+        if (!res.ok) throw new Error("載入大樓列表失敗");
+        const data = await res.json();
+        setBuildings(data);
+      } catch (error) {
+        console.error("載入大樓列表失敗:", error);
+        alert("載入大樓列表失敗");
+      }
+    };
+    fetchBuildings();
+  }, []);
+
+  // 載入教室列表（根據搜尋條件）
+  useEffect(() => {
+    if (!selectedBuilding) {
+      setClassrooms([]);
+      return;
+    }
+
+    const fetchClassrooms = async () => {
+      try {
+        const params = new URLSearchParams({
+          building: selectedBuilding.code,
+        });
+        
+        if (keyword) params.append('search', keyword);
+        if (minCapacity) params.append('min_capacity', minCapacity);
+        if (needProjector) params.append('has_projector', 'true');
+        if (needWhiteboard) params.append('has_whiteboard', 'true');
+        if (needMic) params.append('has_mic', 'true');
+
+        const res = await fetch(API_ENDPOINTS.classrooms(params.toString()));
+        if (!res.ok) throw new Error("載入教室列表失敗");
+        const data = await res.json();
+        setClassrooms(data.results || data);
+      } catch (error) {
+        console.error("載入教室列表失敗:", error);
+        alert("載入教室列表失敗");
+      }
+    };
+
+    fetchClassrooms();
+  }, [selectedBuilding, keyword, minCapacity, needProjector, needWhiteboard, needMic]);
+
+  // 載入已預約時段
+  useEffect(() => {
+    if (!selectedRoom) {
+      return;
+    }
+
+    const fetchOccupiedSlots = async () => {
+      try {
+        const weekStart = getWeekStart();
+        const weekEnd = getWeekEnd();
+        
+        const params = new URLSearchParams({
+          classroom: selectedRoom,
+          date_from: weekStart.toISOString().split('T')[0],
+          date_to: weekEnd.toISOString().split('T')[0],
+        });
+
+        const res = await fetch(API_ENDPOINTS.occupiedSlots(params.toString()));
+        if (!res.ok) throw new Error("載入預約時段失敗");
+        const data = await res.json();
+        
+        // 轉換成前端格式
+        const occupied = {};
+        data.forEach(slot => {
+          const date = new Date(slot.date);
+          const weekStart = getWeekStart();
+          const dayDiff = Math.floor((date - weekStart) / (1000 * 60 * 60 * 24));
+          const day = dayDiff + 1; // 1-7 (週一到週日)
+          
+          const [start, end] = slot.time_slot.split('-').map(Number);
+          
+          if (!occupied[selectedRoom]) {
+            occupied[selectedRoom] = [];
+          }
+          occupied[selectedRoom].push({ day, start, end });
+        });
+        
+        setOccupiedMap(occupied);
+      } catch (error) {
+        console.error("載入預約時段失敗:", error);
+        // 失敗時使用空資料，不影響使用
+        setOccupiedMap({});
+      }
+    };
+
+    fetchOccupiedSlots();
+  }, [selectedRoom]);
+
   /** 側邊大樓清單的搜尋結果 */
   const filteredBuildings = useMemo(() => {
     const kw = buildingSearch.trim().toLowerCase();
-    if (!kw) return BUILDINGS;
-    return BUILDINGS.filter(
+    if (!kw) return buildings;
+    return buildings.filter(
       (b) =>
         b.name.toLowerCase().includes(kw) ||
         b.code.toLowerCase().includes(kw)
     );
-  }, [buildingSearch]);
+  }, [buildingSearch, buildings]);
 
   const resetFilters = () => {
     setKeyword("");
@@ -282,49 +389,50 @@ export default function ClassroomBooking() {
     localStorage.removeItem("access_token");
     localStorage.removeItem("refresh_token");
     localStorage.removeItem("username");
+    localStorage.removeItem("reservation_history");
     setUsername(null);
+    setHistory([]);
     setShowHistory(false);
     setShowRequests(false);
   };
 
-  /** 根據條件過濾教室 */
-  const filteredRooms = useMemo(() => {
-    if (!selectedBuilding) return [];
-    const rooms = selectedBuilding.rooms || [];
+  /** 刷新 token 的輔助函數 */
+  const refreshAccessToken = async () => {
+    const refreshToken = localStorage.getItem("refresh_token");
+    if (!refreshToken) {
+      return null;
+    }
 
-    const kw = keyword.trim().toLowerCase();
-    const minCap = Number(minCapacity) || 0;
+    try {
+      const res = await fetch(API_ENDPOINTS.refresh(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
 
-    return rooms.filter((roomCode) => {
-      const meta = ROOM_META[roomCode] || {};
-
-      // 關鍵字（教室代碼 + 教室名稱）
-      if (kw) {
-        const matchCode = roomCode.toLowerCase().includes(kw);
-        const matchName = (meta.name || "").toLowerCase().includes(kw);
-        if (!matchCode && !matchName) return false;
+      if (!res.ok) {
+        throw new Error("Token refresh failed");
       }
 
-      // 人數
-      if (minCap > 0 && (meta.capacity || 0) < minCap) return false;
+      const data = await res.json();
+      if (data.access) {
+        localStorage.setItem("access_token", data.access);
+        return data.access;
+      }
+      return null;
+    } catch (error) {
+      console.error("Token refresh error:", error);
+      return null;
+    }
+  };
 
-      // 設備條件
-      if (needProjector && !meta.projector) return false;
-      if (needWhiteboard && !meta.whiteboard) return false;
-      if (needNetwork && !meta.network) return false;
-      if (needMic && !meta.mic) return false;
-
-      return true;
-    });
-  }, [
-    selectedBuilding,
-    keyword,
-    minCapacity,
-    needProjector,
-    needWhiteboard,
-    needNetwork,
-    needMic,
-  ]);
+  /** 根據條件過濾教室（已由 API 處理，這裡只是保留前端邏輯） */
+  const filteredRooms = useMemo(() => {
+    // 直接使用從 API 載入的教室列表
+    return classrooms;
+  }, [classrooms]);
 
   const resetSelection = () => {
     setSelectedBuilding(null);
@@ -333,7 +441,7 @@ export default function ClassroomBooking() {
 
   /** 預約事件：打後端 /api/reservations/ */
   const handleReserve = async ({ room, day, start, end }) => {
-    const token = localStorage.getItem("access_token");
+    let token = localStorage.getItem("access_token");
     if (!token) {
       alert("請先登入後再預約");
       navigate("/login");
@@ -341,14 +449,9 @@ export default function ClassroomBooking() {
     }
 
     // 把「週幾」換成真正日期（這一週的週一 + (day-1)）
-    const base = new Date(); // 今天
-    let weekday = base.getDay(); // 0(週日)~6(週六)
-    if (weekday === 0) weekday = 7; // 改成 1~7，週一=1
-    base.setDate(base.getDate() - (weekday - 1)); // 推回本週週一
-    base.setHours(0, 0, 0, 0);
-
-    const d = new Date(base);
-    d.setDate(base.getDate() + (day - 1)); // 加上 day-1，變成該週的那一天
+    const weekStart = getWeekStart();
+    const d = new Date(weekStart);
+    d.setDate(weekStart.getDate() + (day - 1));
     const dateString = d.toISOString().slice(0, 10); // "YYYY-MM-DD"
 
     const payload = {
@@ -358,21 +461,48 @@ export default function ClassroomBooking() {
       reason: "",
     };
 
-    try {
-      const res = await fetch("http://127.0.0.1:8000/api/reservations/", {
+    const makeRequest = async (accessToken) => {
+      return await fetch(API_ENDPOINTS.reservations(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${accessToken}`,
         },
         body: JSON.stringify(payload),
       });
+    };
 
-      const data = await res.json().catch(() => ({}));
+    try {
+      let res = await makeRequest(token);
+      let data = await res.json().catch(() => ({}));
+
+      // 如果 token 過期，嘗試刷新
+      if (res.status === 401 && data.code === "token_not_valid") {
+        console.log("Token expired, attempting refresh...");
+        const newToken = await refreshAccessToken();
+        
+        if (newToken) {
+          // 用新 token 重試
+          token = newToken;
+          res = await makeRequest(token);
+          data = await res.json().catch(() => ({}));
+        } else {
+          // 刷新失敗，需要重新登入
+          alert("登入已過期，請重新登入");
+          handleLogout();
+          navigate("/login");
+          return;
+        }
+      }
+
       console.log("reserve response =", res.status, data);
 
       if (!res.ok) {
-        alert("預約失敗：" + JSON.stringify(data));
+        if (data.detail) {
+          alert("預約失敗：" + data.detail);
+        } else {
+          alert("預約失敗：" + JSON.stringify(data));
+        }
         return;
       }
 
@@ -488,7 +618,11 @@ export default function ClassroomBooking() {
     </div>
   );
 
-  const selectedRoomMeta = selectedRoom ? ROOM_META[selectedRoom] : null;
+  const selectedRoomMeta = useMemo(() => {
+    if (!selectedRoom) return null;
+    // 從 classrooms 陣列中找到選中的教室
+    return classrooms.find(c => c.room_code === selectedRoom);
+  }, [selectedRoom, classrooms]);
 
   return (
     <div className="cb-root">
@@ -741,32 +875,30 @@ export default function ClassroomBooking() {
                   </div>
                 ) : (
                   <div className="cb-room-grid">
-                    {filteredRooms.map((roomCode) => {
-                      const meta = ROOM_META[roomCode] || {};
-                      const active = selectedRoom === roomCode;
+                    {filteredRooms.map((classroom) => {
+                      const active = selectedRoom === classroom.room_code;
 
                       return (
                         <div
-                          key={roomCode}
+                          key={classroom.room_code}
                           className={
                             "cb-room-card" + (active ? " cb-room-card-active" : "")
                           }
-                          onClick={() => setSelectedRoom(roomCode)}
+                          onClick={() => setSelectedRoom(classroom.room_code)}
                         >
-                          <div className="cb-room-code">{roomCode}</div>
-                          <div className="cb-room-name">{meta.name || "教室"}</div>
+                          <div className="cb-room-code">{classroom.room_code}</div>
+                          <div className="cb-room-name">{classroom.name || "教室"}</div>
                           <div className="cb-room-capacity">
-                            容納人數：約 {meta.capacity || "—"} 人
+                            容納人數：約 {classroom.capacity || "—"} 人
                           </div>
                           <div className="cb-room-tags">
-                            {meta.projector && (
+                            {classroom.has_projector && (
                               <span className="cb-tag">投影機</span>
                             )}
-                            {meta.whiteboard && (
+                            {classroom.has_whiteboard && (
                               <span className="cb-tag">白板</span>
                             )}
-                            {meta.network && <span className="cb-tag">網路</span>}
-                            {meta.mic && <span className="cb-tag">麥克風</span>}
+                            {classroom.has_mic && <span className="cb-tag">麥克風</span>}
                           </div>
                         </div>
                       );
