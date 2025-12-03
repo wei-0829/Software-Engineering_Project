@@ -40,6 +40,7 @@ class RegisterSerializer(serializers.ModelSerializer):
             username=account,
             first_name=name,
             password=password,
+            is_staff=False,
         )
         return user
 

@@ -3,7 +3,8 @@ import { useMemo, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./ClassroomBooking.css";
-import { API_ENDPOINTS } from "./config/api";
+import { API_ENDPOINTS } from "./config/api.js";
+import { useAuth } from "./useAuth";
 
 const WEEK_DAYS = ["一", "二", "三", "四", "五", "六", "日"];
 const START_HOUR = 8;
@@ -224,7 +225,7 @@ function WeekCalendar({ room, occupied, onReserve }) {
 export default function ClassroomBooking() {
   const navigate = useNavigate();
 
-  // 從 API 載入的資料
+  // 從 API 載入的資料 (buildings)
   const [buildings, setBuildings] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
@@ -251,17 +252,20 @@ export default function ClassroomBooking() {
     const saved = localStorage.getItem("reservation_history");
     return saved ? JSON.parse(saved) : [];
   });
-  const [isAdmin, setIsAdmin] = useState(true); // 模擬是否為管理員（可改成後端登入判斷）
+
+  // 使用 useAuth hook 取得所有認證相關的狀態與函式
+  // account 是 username (email), user 是使用者名稱, isAdmin 是管理員身份
+  const { account, user, isAdmin, logout, refreshAccessToken } = useAuth();
 
   const [occupiedMap, setOccupiedMap] = useState({});
-  const [username, setUsername] = useState(() => {
-    return localStorage.getItem("username");
-  });
 
   // 當 history 改變時，儲存到 localStorage
   useEffect(() => {
     localStorage.setItem("reservation_history", JSON.stringify(history));
   }, [history]);
+
+  // 注意：isAdmin 的狀態現在由 useAuth hook 管理，
+  // 當 account 變化時，useAuth 內部會自動更新 isAdmin 狀態。
 
   // 載入大樓列表
   useEffect(() => {
@@ -291,17 +295,19 @@ export default function ClassroomBooking() {
         const params = new URLSearchParams({
           building: selectedBuilding.code,
         });
-        
+
         if (keyword) params.append('search', keyword);
         if (minCapacity) params.append('min_capacity', minCapacity);
         if (needProjector) params.append('has_projector', 'true');
         if (needWhiteboard) params.append('has_whiteboard', 'true');
+        if (needNetwork) params.append('has_network', 'true');
         if (needMic) params.append('has_mic', 'true');
 
         const res = await fetch(API_ENDPOINTS.classrooms(params.toString()));
         if (!res.ok) throw new Error("載入教室列表失敗");
         const data = await res.json();
         setClassrooms(data.results || data);
+        setSelectedRoom(null);
       } catch (error) {
         console.error("載入教室列表失敗:", error);
         alert("載入教室列表失敗");
@@ -309,7 +315,7 @@ export default function ClassroomBooking() {
     };
 
     fetchClassrooms();
-  }, [selectedBuilding, keyword, minCapacity, needProjector, needWhiteboard, needMic]);
+  }, [selectedBuilding, keyword, minCapacity, needProjector, needWhiteboard, needNetwork, needMic]);
 
   // 載入已預約時段
   useEffect(() => {
@@ -386,46 +392,14 @@ export default function ClassroomBooking() {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("access_token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("reservation_history");
-    setUsername(null);
+    logout(); // 呼叫從 useAuth 來的 logout 函式，它會處理 token 的清除
     setHistory([]);
     setShowHistory(false);
     setShowRequests(false);
-  };
-
-  /** 刷新 token 的輔助函數 */
-  const refreshAccessToken = async () => {
-    const refreshToken = localStorage.getItem("refresh_token");
-    if (!refreshToken) {
-      return null;
-    }
-
-    try {
-      const res = await fetch(API_ENDPOINTS.refresh(), {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ refresh: refreshToken }),
-      });
-
-      if (!res.ok) {
-        throw new Error("Token refresh failed");
-      }
-
-      const data = await res.json();
-      if (data.access) {
-        localStorage.setItem("access_token", data.access);
-        return data.access;
-      }
-      return null;
-    } catch (error) {
-      console.error("Token refresh error:", error);
-      return null;
-    }
+    // 其他元件狀態的重置
+    setSelectedBuilding(null);
+    setSelectedRoom(null);
+    setClassrooms([]);
   };
 
   /** 根據條件過濾教室（已由 API 處理，這裡只是保留前端邏輯） */
@@ -489,7 +463,7 @@ export default function ClassroomBooking() {
         } else {
           // 刷新失敗，需要重新登入
           alert("登入已過期，請重新登入");
-          handleLogout();
+          logout();
           navigate("/login");
           return;
         }
@@ -745,14 +719,14 @@ export default function ClassroomBooking() {
               </button>
             )}
 
-            {username ? (
+            {account ? (
               <>
                 <button
                   className="cb-login-btn"
-                  style={{ cursor: "default", opacity: 0.9 }}
+                  style={{ cursor: "default" }}
                   disabled
                 >
-                  {username}
+                  {user}
                 </button>
 
                 <button className="cb-login-btn" onClick={handleLogout}>
@@ -899,6 +873,7 @@ export default function ClassroomBooking() {
                               <span className="cb-tag">白板</span>
                             )}
                             {classroom.has_mic && <span className="cb-tag">麥克風</span>}
+                            {classroom.has_network && <span className="cb-tag">網路</span>}
                           </div>
                         </div>
                       );

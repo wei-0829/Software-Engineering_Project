@@ -18,6 +18,7 @@ class ClassroomListSerializer(serializers.ModelSerializer):
             'capacity',
             'has_projector',
             'has_whiteboard',
+            'has_network',
             'has_mic',
             'is_active',
         ]
@@ -44,6 +45,7 @@ class ClassroomSerializer(serializers.ModelSerializer):
             'has_projector',
             'has_screen',
             'has_whiteboard',
+            'has_network',
             'has_mic',
             'has_speaker',
             'has_teacher_computer',
