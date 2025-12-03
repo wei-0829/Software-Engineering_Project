@@ -111,7 +111,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/send_verification/", {
+      const res = await fetch(API_ENDPOINTS.send_verification_email(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ account }),
@@ -147,7 +147,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/send_change_pwd/", {
+      const res = await fetch(API_ENDPOINTS.send_change_pwd(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ account }),
@@ -184,7 +184,7 @@ export default function Login() {
         return
     }
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/verify_change_pwd/", {
+      const res = await fetch(API_ENDPOINTS.verify_change_pwd(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
