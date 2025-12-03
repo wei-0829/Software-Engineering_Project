@@ -27,7 +27,7 @@ urlpatterns = [
     path("register/", RegisterView.as_view(), name="register"),
     path("login/", LoginView.as_view(), name="login"),
     path("refresh/", RefreshTokenView.as_view(), name="refresh"),
-    path("send_verification/", SendVerificationView.as_view(), name="send_verification"),
+    path("send_verification_email/", SendVerificationView.as_view(), name="send_verification"),
     path("send_change_pwd/", ChangePasswordView.as_view(), name="change_pwd"),
     path("verify_change_pwd/",VerifyChangePasswordView.as_view(),name="verify_change_pwd")
 ]

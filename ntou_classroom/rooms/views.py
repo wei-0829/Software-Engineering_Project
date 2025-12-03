@@ -2,7 +2,7 @@
 from rest_framework import viewsets, status, filters
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, Count
 from django.core.cache import cache
@@ -19,20 +19,22 @@ class ClassroomPagination(PageNumberPagination):
     max_page_size = 100
 
 
-class ClassroomViewSet(viewsets.ReadOnlyModelViewSet):
+class ClassroomViewSet(viewsets.ModelViewSet):
     """
     教室查詢 API ViewSet
     
     提供以下端點：
     - GET /api/rooms/classrooms/              # 取得教室列表（支援進階搜尋、分頁、排序）
     - GET /api/rooms/classrooms/{room_code}/  # 取得單一教室詳情
+    - POST /api/rooms/classrooms/             # 新增教室 (僅管理員)
+    - PUT /api/rooms/classrooms/{room_code}/  # 更新教室 (僅管理員)
+    - PATCH /api/rooms/classrooms/{room_code}/# 部分更新教室 (僅管理員)
+    - DELETE /api/rooms/classrooms/{room_code}/# 刪除教室 (僅管理員)
     - GET /api/rooms/classrooms/buildings/    # 取得所有大樓列表
-    - GET /api/rooms/classrooms/stats/        # 取得統計資訊
     """
     queryset = Classroom.objects.filter(is_active=True)
     serializer_class = ClassroomSerializer
     lookup_field = 'room_code'
-    permission_classes = [AllowAny]  # 任何人都可以查詢教室
     pagination_class = ClassroomPagination
     filter_backends = [filters.OrderingFilter]
     ordering_fields = ['capacity', 'room_code', 'building']
@@ -45,6 +47,16 @@ class ClassroomViewSet(viewsets.ReadOnlyModelViewSet):
         if self.action == 'list':
             return ClassroomListSerializer
         return ClassroomSerializer
+
+    def get_permissions(self):
+        """
+        根據 action 決定權限：
+        - 讀取操作 (list, retrieve, buildings, stats) -> 任何人都可以
+        - 寫入操作 (create, update, partial_update, destroy) -> 僅限管理員
+        """
+        if self.action in ['list', 'retrieve', 'buildings', 'stats']:
+            return [AllowAny()]
+        return [IsAdminUser()]
     
     def get_queryset(self):
         """
@@ -57,6 +69,7 @@ class ClassroomViewSet(viewsets.ReadOnlyModelViewSet):
         - has_projector: 是否有投影機（true/false）
         - has_whiteboard: 是否有白板（true/false）
         - has_mic: 是否有麥克風（true/false）
+        - has_network: 是否有網路（true/false）
         """
         queryset = super().get_queryset()
         
@@ -93,6 +106,10 @@ class ClassroomViewSet(viewsets.ReadOnlyModelViewSet):
         has_mic = self.request.query_params.get('has_mic')
         if has_mic and has_mic.lower() == 'true':
             queryset = queryset.filter(has_mic=True)
+        
+        has_network = self.request.query_params.get('has_network')
+        if has_network and has_network.lower() == 'true':
+            queryset = queryset.filter(has_network=True)
         
         return queryset
     

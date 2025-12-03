@@ -55,6 +55,7 @@ class Classroom(models.Model):
     has_projector = models.BooleanField(default=False, verbose_name="投影機")
     has_screen = models.BooleanField(default=False, verbose_name="投影幕")
     has_whiteboard = models.BooleanField(default=True, verbose_name="白板")
+    has_network = models.BooleanField(default=True, verbose_name="網路")
 
     has_mic = models.BooleanField(default=False, verbose_name="麥克風")
     has_speaker = models.BooleanField(default=False, verbose_name="喇叭系統")
