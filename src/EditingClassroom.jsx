@@ -1,80 +1,121 @@
-import { useState } from "react";
+import { useState,useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./EditingClassroom.css";
+import { API_ENDPOINTS } from "./config/api.js";
+import { useAuth } from "./useAuth";
 
 export default function EditingClassroom() {
   const navigate = useNavigate();
-
-  // 🔹 一開始先放一間教室（示範用）
-  const [classrooms, setClassrooms] = useState([
-    {
-      id: 1,
-      building_code: "INS",
-      room_code: "INS201",
-      capacity: 30,
-      hasProjector: true,
-      hasWhiteboard: true,
-      hasNetwork: true,
-      hasMic: false,
-    },
-  ]);
-
+  const { isAdmin, refreshAccessToken, logout } = useAuth();
+  
+  const [classrooms, setClassrooms] = useState([]);
   const [saving, setSaving] = useState(false);
   const [newBuilding, setNewBuilding] = useState("");
-  const [newRoom, setNewRoom] = useState("");
+  const [newRoomCode, setNewRoomCode] = useState("");
   const [newCapacity, setNewCapacity] = useState("");
-
-  // 新增教室時的設備預設值
+  const [newRoomName, setNewRoomName] = useState("");
   const [newEquip, setNewEquip] = useState({
-    hasProjector: false,
-    hasWhiteboard: false,
-    hasNetwork: false,
-    hasMic: false,
+    has_projector: false,
+    has_whiteboard: false,
+    has_network: false,
+    has_mic: false,
   });
+  
+  useEffect(() => {
+    if (!isAdmin) {
+      alert("只有管理員才能存取此頁面");
+      navigate("/");
+      return;
+    }
 
-  // 🔹 新增教室（目前只改前端 state）
-  const handleCreate = () => {
-    if (!newBuilding || !newRoom || !newCapacity) {
-      alert("請填寫完整資訊");
+    const fetchClassrooms = async () => {
+      try {
+        const res = await fetch(API_ENDPOINTS.classrooms("page_size=200")); // 取得所有教室
+        if (!res.ok) throw new Error("載入教室列表失敗");
+        const data = await res.json();
+        setClassrooms(data.results || []);
+      } catch (error) {
+        console.error("載入教室列表失敗:", error);
+        alert("載入教室列表失敗");
+      }
+    };
+
+    fetchClassrooms();
+  }, [isAdmin, navigate]);
+
+  // 🔹 新增教室
+  const handleCreate = async () => {
+    if (!newBuilding || !newRoomCode || !newCapacity || !newRoomName) {
+      alert("請填寫所有必填欄位（大樓、教室代碼、教室名稱、人數）");
       return;
     }
 
     const capNum = Number(newCapacity);
-    if (Number.isNaN(capNum) || capNum < 0) {
+    if (Number.isNaN(capNum) || capNum <= 0) {
       alert("請輸入正確的人數");
       return;
     }
 
     setSaving(true);
 
-    const newId = Date.now();
+    const payload = {
+      building: newBuilding.toUpperCase(),
+      room_code: newRoomCode.toUpperCase(),
+      name: newRoomName,
+      capacity: capNum,
+      ...newEquip,
+    };
 
-    setClassrooms((list) => [
-      ...list,
-      {
-        id: newId,
-        building_code: newBuilding,
-        room_code: newRoom,
-        capacity: capNum,
-        ...newEquip,
-      },
-    ]);
+    const makeRequest = async (accessToken) => {
+      return await fetch(API_ENDPOINTS.classrooms(), {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    };
 
-    setNewBuilding("");
-    setNewRoom("");
-    setNewCapacity("");
-    setNewEquip({
-      hasProjector: false,
-      hasWhiteboard: false,
-      hasNetwork: false,
-      hasMic: false,
-    });
-    setSaving(false);
+    try {
+      let token = localStorage.getItem("access_token");
+      let res = await makeRequest(token);
+
+      if (res.status === 401) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          res = await makeRequest(newToken);
+        } else {
+          throw new Error("登入已過期，請重新登入");
+        }
+      }
+
+      if (!res.ok) {
+        const errData = await res.json();
+        const errorString = Object.entries(errData).map(([key, value]) => `${key}: ${value}`).join('\n');
+        throw new Error(errorString || "新增失敗");
+      }
+
+      const newClassroom = await res.json();
+      setClassrooms((prev) => [...prev, newClassroom].sort((a, b) => a.room_code.localeCompare(b.room_code)));
+      alert(`教室 ${newClassroom.room_code} 已成功新增！`);
+      // 清空表單
+      setNewBuilding(""); setNewRoomCode(""); setNewRoomName(""); setNewCapacity("");
+      setNewEquip({ has_projector: false, has_whiteboard: false, has_network: false, has_mic: false });
+    } catch (error) {
+      alert(`新增錯誤：\n${error.message}`);
+      if (error.message.includes("登入已過期")) {
+        logout();
+        navigate("/login");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
 
-  // 🔹 更新教室設定（人數 + 設備），目前只改 state
-  const handleSaveClassroom = (cls) => {
+  // 🔹 更新教室設定（人數 + 設備），串接後端 API
+  const handleSaveClassroom = async (cls) => {
     const capNum = Number(cls.capacity);
     if (Number.isNaN(capNum) || capNum < 0) {
       alert("請輸入正確的人數");
@@ -83,35 +124,126 @@ export default function EditingClassroom() {
 
     setSaving(true);
 
-    setClassrooms((list) =>
-      list.map((c) =>
-        c.id === cls.id ? { ...cls, capacity: capNum } : c
-      )
-    );
+    const payload = {
+      capacity: capNum,
+      has_projector: cls.has_projector,
+      has_whiteboard: cls.has_whiteboard,
+      has_network: cls.has_network,
+      has_mic: cls.has_mic,
+    };
 
-    setSaving(false);
-    alert("已儲存教室設定（僅前端模擬）");
+    const makeRequest = async (accessToken) => {
+      return await fetch(API_ENDPOINTS.classroomDetail(cls.room_code), {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify(payload),
+      });
+    };
+
+    try {
+      let token = localStorage.getItem("access_token");
+      let res = await makeRequest(token);
+
+      if (res.status === 401) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          res = await makeRequest(newToken);
+        } else {
+          alert("登入已過期，請重新登入");
+          logout();
+          navigate("/login");
+          return;
+        }
+      }
+
+      if (!res.ok) {
+        const errData = await res.json();
+        throw new Error(errData.detail || "更新失敗");
+      }
+
+      const updatedRoom = await res.json();
+
+      // 後端成功後，更新前端 state
+      setClassrooms((list) =>
+        list.map((c) =>
+          c.room_code === updatedRoom.room_code ? updatedRoom : c
+        )
+      );
+
+      alert(`教室 ${updatedRoom.room_code} 已成功儲存！`);
+    } catch (error) {
+      console.error("儲存失敗:", error);
+      alert(`儲存失敗：${error.message}`);
+    } finally {
+      setSaving(false);
+    }
   };
 
   // 🔹 切換單一教室的設備 checkbox
-  const toggleEquip = (id, field) => {
+  const toggleEquip = (roomCode, field) => {
     setClassrooms((list) =>
       list.map((c) =>
-        c.id === id ? { ...c, [field]: !c[field] } : c
+        c.room_code === roomCode ? { ...c, [field]: !c[field] } : c
       )
     );
   };
 
   // 🔹 刪除教室
-  const handleDelete = (cls) => {
-    if (!window.confirm(`確定要刪除 ${cls.building_code} / ${cls.room_code} 嗎？`)) {
+  const handleDelete = async (cls) => {
+    if (!window.confirm(`確定要刪除 ${cls.building} / ${cls.room_code} 嗎？`)) {
       return;
     }
 
     setSaving(true);
-    setClassrooms((list) => list.filter((c) => c.id !== cls.id));
-    setSaving(false);
+
+    const makeRequest = async (accessToken) => {
+      return await fetch(API_ENDPOINTS.classroomDetail(cls.room_code), {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+    };
+
+    try {
+      let token = localStorage.getItem("access_token");
+      let res = await makeRequest(token);
+
+      if (res.status === 401) {
+        const newToken = await refreshAccessToken();
+        if (newToken) {
+          res = await makeRequest(newToken);
+        } else {
+          throw new Error("登入已過期，請重新登入");
+        }
+      }
+
+      // 刪除成功時，後端會回傳 204 No Content，此時 res.ok 會是 true
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.detail || "刪除失敗");
+      }
+
+      // 後端成功後，更新前端 state
+      setClassrooms((list) => list.filter((c) => c.room_code !== cls.room_code));
+      alert(`教室 ${cls.room_code} 已成功刪除！`);
+    } catch (error) {
+      alert(`刪除失敗：\n${error.message}`);
+      if (error.message.includes("登入已過期")) {
+        logout();
+        navigate("/login");
+      }
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (!isAdmin) {
+    return null; // 權限檢查中或權限不足，不渲染任何東西
+  }
 
   return (
     <div className="cb-root">
@@ -152,9 +284,9 @@ export default function EditingClassroom() {
                     </tr>
                   </thead>
                   <tbody>
-                    {classrooms.map((c, idx) => (
-                      <tr key={c.id ?? idx}>
-                        <td>{c.building_code}</td>
+                    {classrooms.map((c) => (
+                      <tr key={c.room_code}>
+                        <td>{c.building}</td>
                         <td>{c.room_code}</td>
                         <td>
                           <input
@@ -166,7 +298,7 @@ export default function EditingClassroom() {
                               const value = e.target.value;
                               setClassrooms((list) =>
                                 list.map((x) =>
-                                  x.id === c.id ? { ...x, capacity: value } : x
+                                  x.room_code === c.room_code ? { ...x, capacity: value } : x
                                 )
                               );
                             }}
@@ -177,9 +309,9 @@ export default function EditingClassroom() {
                             <label className="cb-equip-check">
                               <input
                                 type="checkbox"
-                                checked={!!c.hasProjector}
+                                checked={!!c.has_projector}
                                 onChange={() =>
-                                  toggleEquip(c.id, "hasProjector")
+                                  toggleEquip(c.room_code, "has_projector")
                                 }
                               />
                               有投影機
@@ -187,9 +319,9 @@ export default function EditingClassroom() {
                             <label className="cb-equip-check">
                               <input
                                 type="checkbox"
-                                checked={!!c.hasWhiteboard}
+                                checked={!!c.has_whiteboard}
                                 onChange={() =>
-                                  toggleEquip(c.id, "hasWhiteboard")
+                                  toggleEquip(c.room_code, "has_whiteboard")
                                 }
                               />
                               有白板
@@ -197,9 +329,9 @@ export default function EditingClassroom() {
                             <label className="cb-equip-check">
                               <input
                                 type="checkbox"
-                                checked={!!c.hasNetwork}
+                                checked={!!c.has_network}
                                 onChange={() =>
-                                  toggleEquip(c.id, "hasNetwork")
+                                  toggleEquip(c.room_code, "has_network")
                                 }
                               />
                               有網路
@@ -207,9 +339,9 @@ export default function EditingClassroom() {
                             <label className="cb-equip-check">
                               <input
                                 type="checkbox"
-                                checked={!!c.hasMic}
+                                checked={!!c.has_mic}
                                 onChange={() =>
-                                  toggleEquip(c.id, "hasMic")
+                                  toggleEquip(c.room_code, "has_mic")
                                 }
                               />
                               有麥克風
@@ -246,105 +378,84 @@ export default function EditingClassroom() {
 
           <div className="cb-section">
             <h2 className="cb-section-title">新增教室</h2>
-            <div className="cb-form-row">
-              <label>
-                大樓代碼
+            <div className="add-form-grid">
+              {/* ----- 基本資訊 ----- */}
+              <div className="form-group">
+                <label className="form-label">大樓代碼</label>
                 <input
-                  className="cb-search-input"
-                  placeholder="例如：INS / ECG"
+                  className="form-input"
+                  placeholder="例如：INS"
                   value={newBuilding}
-                  onChange={(e) => setNewBuilding(e.target.value)}
+                  onChange={(e) => setNewBuilding(e.target.value.toUpperCase())}
                 />
-              </label>
-
-              <label>
-                教室代碼
+              </div>
+              <div className="form-group">
+                <label className="form-label">教室代碼</label>
                 <input
-                  className="cb-search-input"
+                  className="form-input"
                   placeholder="例如：INS201"
-                  value={newRoom}
-                  onChange={(e) => setNewRoom(e.target.value)}
+                  value={newRoomCode}
+                  onChange={(e) => setNewRoomCode(e.target.value.toUpperCase())}
                 />
-              </label>
-
-              <label>
-                可容納人數
+              </div>
+              <div className="form-group">
+                <label className="form-label">教室名稱</label>
+                <input
+                  className="form-input"
+                  placeholder="例如：資工系電腦教室"
+                  value={newRoomName}
+                  onChange={(e) => setNewRoomName(e.target.value)}
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">可容納人數</label>
                 <input
                   type="number"
                   min="0"
-                  className="cb-search-input"
-                  placeholder="例如：30 / 60"
+                  className="form-input"
+                  placeholder="例如：40"
                   value={newCapacity}
                   onChange={(e) => setNewCapacity(e.target.value)}
                 />
-              </label>
+              </div>
 
-              <div className="cb-equip-new">
-                <span className="cb-equip-label">設備</span>
-                <div className="cb-equip-grid">
-                  <label className="cb-equip-check">
-                    <input
-                      type="checkbox"
-                      checked={newEquip.hasProjector}
-                      onChange={(e) =>
-                        setNewEquip((prev) => ({
-                          ...prev,
-                          hasProjector: e.target.checked,
-                        }))
-                      }
-                    />
-                    有投影機
-                  </label>
-                  <label className="cb-equip-check">
-                    <input
-                      type="checkbox"
-                      checked={newEquip.hasWhiteboard}
-                      onChange={(e) =>
-                        setNewEquip((prev) => ({
-                          ...prev,
-                          hasWhiteboard: e.target.checked,
-                        }))
-                      }
-                    />
-                    有白板
-                  </label>
-                  <label className="cb-equip-check">
-                    <input
-                      type="checkbox"
-                      checked={newEquip.hasNetwork}
-                      onChange={(e) =>
-                        setNewEquip((prev) => ({
-                          ...prev,
-                          hasNetwork: e.target.checked,
-                        }))
-                      }
-                    />
-                    有網路
-                  </label>
-                  <label className="cb-equip-check">
-                    <input
-                      type="checkbox"
-                      checked={newEquip.hasMic}
-                      onChange={(e) =>
-                        setNewEquip((prev) => ({
-                          ...prev,
-                          hasMic: e.target.checked,
-                        }))
-                      }
-                    />
-                    有麥克風
-                  </label>
+              {/* ----- 設備 ----- */}
+              <div className="form-group-span">
+                <label className="form-label">設備</label>
+                <div className="equip-grid">
+                  {[
+                    { key: 'has_projector', label: '投影機' },
+                    { key: 'has_whiteboard', label: '白板' },
+                    { key: 'has_network', label: '網路' },
+                    { key: 'has_mic', label: '麥克風' },
+                  ].map(item => (
+                    <label key={item.key} className="equip-check">
+                      <input
+                        type="checkbox"
+                        checked={newEquip[item.key]}
+                        onChange={(e) =>
+                          setNewEquip((prev) => ({
+                            ...prev,
+                            [item.key]: e.target.checked,
+                          }))
+                        }
+                      />
+                      {item.label}
+                    </label>
+                  ))}
                 </div>
               </div>
 
-              <button
-                className="cb-btn"
-                style={{ alignSelf: "flex-end" }}
-                disabled={saving}
-                onClick={handleCreate}
-              >
-                新增教室
-              </button>
+              {/* ----- 按鈕 ----- */}
+              <div className="form-actions">
+                <button
+                  className="cb-btn"
+                  disabled={saving}
+                  onClick={handleCreate}
+                >
+                  {saving ? "新增中..." : "確認新增教室"}
+                </button>
+              </div>
             </div>
           </div>
         </div>
