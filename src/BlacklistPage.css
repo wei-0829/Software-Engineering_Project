@@ -1,0 +1,190 @@
+/* ====== 黑名單頁面：左右兩個大容器 ====== */
+
+.bl-columns {
+  margin-top: 20px;
+  display: flex;              /* ← 改成 FLEX：三欄永遠同一行 */
+  gap: 24px;
+  align-items: stretch;
+}
+
+/* 左／右 column，共用外觀 */
+.bl-column {
+  flex: 1 1 0;                /* 左右各佔一半空間 */
+  background: #f8fbff;
+  border-radius: 20px;
+  border: 1px solid #e0e8fa;
+  padding: 20px 22px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.12);
+  display: flex;
+  flex-direction: column;
+}
+
+/* 標題列（左邊標題＋右邊人數圓角 badge） */
+.bl-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.bl-count-badge {
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.08);
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.bl-count-badge-danger {
+  background: rgba(220, 38, 38, 0.08);
+  color: #b91c1c;
+}
+
+/* 讓裡面的表格貼齊 column 寬度 */
+.bl-table-wrap {
+  margin-top: 8px;
+  box-shadow: none;
+  border-radius: 14px;
+}
+
+.bl-table {
+  font-size: 16px;
+}
+
+.bl-table th {
+  font-size: 16px;
+}
+
+.bl-table td {
+  font-size: 15px;
+}
+
+/* 空列表時的提示條 */
+.bl-empty {
+  margin-top: 10px;
+}
+
+/* 停權 / 恢復按鈕配色 */
+.bl-btn-block {
+  background: #ef4444;
+}
+
+.bl-btn-block:hover {
+  background: #dc2626;
+}
+
+.bl-btn-restore {
+  background: #10b981;
+}
+
+.bl-btn-restore:hover {
+  background: #059669;
+}
+
+/* ====== 底部藍色 footer ====== */
+
+.blacklist-footer {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 60px;
+
+  background: linear-gradient(
+    to bottom,
+    #3dc9ff 0%,
+    #1ca2ff 40%,
+    #0787ff 100%
+  );
+
+  display: flex;
+  align-items: center;
+  padding-left: 20px;
+
+  color: white;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+
+  z-index: 999;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.1);
+}
+
+/* ====== 中間箭頭區：永遠固定在中間，不會被擠下去 ====== */
+
+.bl-arrows {
+  flex: 0 0 90px;     /* 固定寬度，不會被壓縮 */
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+
+  gap: 20px;
+  padding: 20px 0;
+  opacity: 0.8;
+}
+
+.bl-arrow-icon {
+  font-size: 42px;
+  font-weight: 800;
+  color: #2563eb;
+
+  background: white;
+  padding: 14px 22px;
+  border-radius: 16px;
+  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
+  border: 1px solid #e0e8fa;
+
+  transition: transform 0.15s ease, opacity 0.2s ease;
+  cursor: pointer;
+}
+
+.bl-arrow-icon:hover {
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* ====== 手機版：改成垂直堆疊 ====== */
+
+@media (max-width: 900px) {
+  .bl-columns {
+    flex-direction: column;
+  }
+
+  .bl-arrows {
+    flex-direction: row;
+    justify-content: center;
+    padding: 10px 0 20px;
+  }
+}
+
+/* ====== 放大外層卡片（可選） ====== */
+
+.bl-main-card {
+  max-width: 2000px;
+  width: min(2000px, 100% - 64px);
+  margin-inline: auto;
+}
+
+/* 上方箭頭：紅色（停權） */
+.bl-arrow-red {
+  background: #ef4444;
+  color: white !important;
+  border-color: #dc2626;
+}
+
+.bl-arrow-red:hover {
+  background: #dc2626;
+}
+
+/* 下方箭頭：綠色（恢復） */
+.bl-arrow-green {
+  background: #10b981;
+  color: white !important;
+  border-color: #059669;
+}
+
+.bl-arrow-green:hover {
+  background: #059669;
+}

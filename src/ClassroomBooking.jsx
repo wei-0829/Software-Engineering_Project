@@ -550,7 +550,7 @@ export default function ClassroomBooking() {
     }
   };
 
-  /** 歷史頁 */
+    /** 歷史頁 */
   const HistoryPanel = () => {
     // 載入我的預約（一般使用者和管理員都只看自己的）
     useEffect(() => {
@@ -595,28 +595,96 @@ export default function ClassroomBooking() {
       return statusMap[status] || status;
     };
 
+    // 🔹 取消預約
+    const handleCancelReservation = async (reservation) => {
+      const { id, classroom, date, time_slot } = reservation;
+
+      if (!window.confirm(`確定要取消 ${classroom} ${date} ${time_slot} 的預約嗎？`)) {
+        return;
+      }
+      try {
+        let token = localStorage.getItem("access_token");
+        const doRequest = async (accessToken) =>
+          fetch(API_ENDPOINTS.updateReservationStatus(reservation.id), {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({ status: "cancelled" }),
+          });
+
+        let res = await doRequest(token);
+
+        // token 過期的情況
+        if (res.status === 401) {
+          const newToken = await refreshAccessToken();
+          if (!newToken) {
+            alert("登入已過期，請重新登入");
+            logout();
+            return;
+          }
+          res = await doRequest(newToken);
+        }
+
+        if (!res.ok) {
+          throw new Error("取消預約失敗");
+        }
+
+        // 更新前端列表狀態
+        setMyReservations((prev) =>
+          prev.map((r) =>
+            r.id === reservation.id ? { ...r, status: "cancelled" } : r
+          )
+        );
+
+        alert("預約已取消");
+      } catch (error) {
+        console.error("取消預約失敗:", error);
+        alert(error.message || "取消預約失敗");
+      }
+    };
+
     return (
       <div className="cb-section">
         <h2 className="cb-section-title">我的教室預約歷史</h2>
         {myReservations.length === 0 ? (
           <div className="cb-selection-banner">目前沒有任何預約紀錄。</div>
         ) : (
-          <ol className="cb-list dashed">
+          <ol className="cb-list dashed cb-history-list">
             {[...myReservations].reverse().map((reservation) => (
-              <li key={reservation.id}>
-                <div style={{ fontWeight: 800 }}>
-                  教室：{reservation.classroom}
+              <li key={reservation.id} className="cb-history-item">
+                {/* 左邊：文字區塊 */}
+                <div className="cb-history-main">
+                  <div style={{ fontWeight: 800 }}>
+                    教室：{reservation.classroom}
+                  </div>
+                  <div>
+                    日期：{reservation.date} | 時段：{reservation.time_slot}
+                  </div>
+                  <div style={{ color: "#6b7280", fontSize: 13 }}>
+                    用途：{reservation.reason || "無"}
+                  </div>
+                  <div style={{ color: "#6b7280", fontSize: 13 }}>
+                    狀態：
+                    <span className={`status-label status-${reservation.status}`}>
+                      {getStatusText(reservation.status)}
+                    </span>
+                    {" "} | 建立時間：{new Date(reservation.created_at).toLocaleString()}
+                  </div>
                 </div>
-                <div>
-                  日期：{reservation.date} | 時段：{reservation.time_slot}
-                </div>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  用途：{reservation.reason || "無"}
-                </div>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  狀態：{getStatusText(reservation.status)} | 建立時間：
-                  {new Date(reservation.created_at).toLocaleString()}
-                </div>
+
+                {/* 右邊：按鈕區塊 */}
+                {(reservation.status === "pending" || reservation.status === "approved") && (
+                  <div className="cb-history-actions">
+                    <button
+                      className="cb-btn cb-history-cancel-btn"
+                      onClick={() => handleCancelReservation(reservation)}
+                    >
+                      取消預約
+                    </button>
+                  </div>
+                )}
               </li>
             ))}
           </ol>
@@ -884,6 +952,16 @@ export default function ClassroomBooking() {
               </button>
             )}
 
+            {/* ✅ 新增：黑名單按鈕（只有管理員看得到） */}
+            {isAdmin && (
+              <button
+                className="cb-login-btn"
+                onClick={() => navigate("/blacklist")}
+              >
+                黑名單
+              </button>
+            )}
+            
             {account ? (
               <>
                 <button
