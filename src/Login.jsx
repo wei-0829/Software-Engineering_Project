@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./Login.css";
 import { API_ENDPOINTS } from "./config/api";
-import { set } from "mongoose";
 
 /*
   Login.jsx  
