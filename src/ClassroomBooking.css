@@ -307,3 +307,75 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ====== 歷史紀錄：文字在左、按鈕在右 ====== */
+
+.cb-history-list .cb-history-item {
+  position: relative;
+  display: flex;                      /* 關鍵：改成左右排列 */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  /* 覆蓋 cb-list.dashed li 的 padding / 邊線 */
+  padding: 10px 12px 10px 30px;       /* 左側 30px 留給藍點 */
+  margin-bottom: 6px;
+  border-bottom: 1px dashed #cfd4da;
+  list-style: none;
+}
+
+.cb-history-list .cb-history-item::before {
+  /* 保留原本那顆藍色圓點 */
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15px;
+  width: 10px;
+  height: 10px;
+  background: #2563eb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.cb-history-main {
+  flex: 1;          /* 讓文字區塊填滿左邊空間 */
+}
+
+.cb-history-actions {
+  flex-shrink: 0;   /* 按鈕寬度固定，不被擠壓 */
+  display: flex;
+  align-items: center;
+}
+
+/* 讓「取消預約」按鈕改成紅色、稍微小一點 */
+.cb-history-cancel-btn {
+  background: #ef4444;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.25);
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.cb-history-cancel-btn:hover {
+  background: #dc2626;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.32);
+}
+
+/* 單獨改狀態三個字的顏色 */
+.status-label {
+  font-weight: 800;
+}
+
+/* 已批准 → 藍色 */
+.status-approved {
+  color: #2563eb;
+}
+
+/* 已拒絕 → 紅色 */
+.status-rejected {
+  color: #dc2626;
+}
+
+/* 待審核 → 黑色 */
+.status-pending {
+  color: #111827;
+}
