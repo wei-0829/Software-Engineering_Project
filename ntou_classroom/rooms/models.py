@@ -3,7 +3,7 @@ from django.db import models
 
 
 class Classroom(models.Model):
-    # 校區 / 大樓
+    # 校區 / 大樓（對應前端代碼）
     BUILDINGS = [
         ("INS", "資工系館"),
         ("ECG", "電資暨綜合教學大樓"),
