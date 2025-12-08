@@ -3,10 +3,11 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.exceptions import TokenError
 from django.core.exceptions import ValidationError
 from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer
-from accounts.services import send_verification, verify_code,valid_password
+from accounts.services import send_verification, verify_code, valid_password, VerificationPurpose
 import re
 User = get_user_model()
 
@@ -32,7 +33,7 @@ class RegisterView(APIView):
             return Response({"detail": "缺少密碼"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             valid_password(password)
-            verify_code(account, code,"register:")
+            verify_code(account, code, VerificationPurpose.REGISTER)
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:
@@ -86,6 +87,12 @@ class LoginView(APIView):
         # SimpleJWT：產生 refresh token + access token
         refresh = RefreshToken.for_user(user)
 
+        # 【關鍵修改】在 access token 的 payload 中加入角色資訊
+        refresh['is_staff']=user.is_staff
+        refresh['is_superuser']=user.is_superuser
+        refresh.access_token['is_staff'] = user.is_staff
+        refresh.access_token['is_superuser'] = user.is_superuser
+
         # 回傳 token 與使用者資訊給前端
         return Response(
             {
@@ -99,6 +106,36 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class RefreshTokenView(APIView):
+    """
+    POST /api/auth/refresh/
+    - 使用 refresh token 取得新的 access token
+    """
+    permission_classes = [AllowAny]
+
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response(
+                {"detail": "缺少 refresh token"}, 
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        try:
+            refresh = RefreshToken(refresh_token)
+            return Response(
+                {
+                    "access": str(refresh.access_token),
+                },
+                status=status.HTTP_200_OK,
+            )
+        except TokenError as e:
+            return Response(
+                {"detail": "無效或過期的 refresh token"}, 
+                status=status.HTTP_401_UNAUTHORIZED
+            )
 
 
 class SendVerificationView(APIView):
@@ -117,7 +154,7 @@ class SendVerificationView(APIView):
             return Response({"detail": "此帳號已存在，請直接登入或更換帳號"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            send_verification(email,"register:")
+            send_verification(email, VerificationPurpose.REGISTER)
             return Response({"detail": "驗證碼已寄出"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
@@ -139,7 +176,7 @@ class ChangePasswordView(APIView):
             return Response({"detail": "此帳不存在，請註冊新帳號"}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            send_verification(email,"changepwd:")
+            send_verification(email, VerificationPurpose.CHANGE_PASSWORD)
             return Response({"detail": "驗證碼已寄出"}, status=status.HTTP_200_OK)
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
@@ -167,7 +204,7 @@ class VerifyChangePasswordView(APIView):
             return Response({"detail":"無法使用相同密碼"},status=status.HTTP_400_BAD_REQUEST)
         try:
             valid_password(password)
-            verify_code(account, code,"changepwd:")
+            verify_code(account, code, VerificationPurpose.CHANGE_PASSWORD)
         except ValidationError as e:
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:

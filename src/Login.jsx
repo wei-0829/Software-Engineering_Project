@@ -2,6 +2,7 @@ import { useState, useRef,useEffect} from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./Login.css";
+import { API_ENDPOINTS } from "./config/api";
 
 /*
   Login.jsx  
@@ -15,6 +16,11 @@ export default function Login() {
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [verifyCooldown, setVerifyCooldown] = useState(0);
+  const [Logging,setLogging]=useState(false)
+  const [sendOtpCode,setSendOtpCode]=useState(false)
+  const [Registering,setRegistering] =useState(false)
+  const [changingPassword,setChangingPassword]=useState(false)
+
   const registerNameRef = useRef(null);
   const registerAccountRef = useRef(null);
 
@@ -33,9 +39,9 @@ export default function Login() {
      ----------------------------- */
   const onSubmitLogin = async (e) => {
     e.preventDefault();
-
+    setLogging(true);
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/login/", {
+      const res = await fetch(API_ENDPOINTS.login(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -54,13 +60,16 @@ export default function Login() {
 
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem("user", JSON.stringify(data.user));
-       localStorage.setItem("username", account);
+      localStorage.setItem("name", data.user.name);
+      localStorage.setItem("username", account);
 
       navigate("/");
     } catch (err) {
       console.error("sd");
       alert("無法連線到伺服器");
+    }
+    finally{
+      setLogging(false)
     }
   };
 
@@ -69,7 +78,7 @@ export default function Login() {
      ----------------------------- */
   const onSubmitRegister = async (e) => {
     e.preventDefault();
-
+    setRegistering(true)
     // 從 form 拿三個欄位（用 name 會比用 index 穩）
     const form = e.target;
     const name = form.elements["name"].value;
@@ -78,7 +87,7 @@ export default function Login() {
     const code = form.elements["code"]?.value;
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/register/", {
+      const res = await fetch(API_ENDPOINTS.register(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -88,7 +97,7 @@ export default function Login() {
 
       if (!res.ok) {
         const { detail } = await res.json().catch(() => ({}));
-        alert(detail ? `註冊失敗：${detail}` : "註冊失敗");
+        alert(detail ? `註冊失敗：${detail}` : "註冊失敗，請稍後再試");
         return;
       }
 
@@ -98,9 +107,13 @@ export default function Login() {
       console.error(err);
       alert("無法連線到伺服器");
     }
+    finally{
+      setRegistering(false)
+    }
   };
 
   const onSubmitValidation = async (accountValue) => {
+    setSendOtpCode(true);
     const account =
       (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
@@ -110,7 +123,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/send_verification/", {
+      const res = await fetch(API_ENDPOINTS.send_verification_email(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ account }),
@@ -131,12 +144,16 @@ export default function Login() {
       console.error(err);
       alert(err);
     }
+    finally{
+      setSendOtpCode(false);
+    }
   };
 
   /* -----------------------------
       3. 忘記密碼
      ----------------------------- */
   const onSubmitForgot = async (accountValue) => {
+    setSendOtpCode(true);
     const account =
       (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
@@ -146,7 +163,7 @@ export default function Login() {
     }
 
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/send_change_pwd/", {
+      const res = await fetch(API_ENDPOINTS.send_change_pwd(),{
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ account }),
@@ -164,10 +181,14 @@ export default function Login() {
       console.error(err);
       alert(err);
     }
+    finally{
+      setSendOtpCode(false);
+    }
   };
 
   const onSubmitNewPassword = async (e) => {
     e.preventDefault();
+    setChangingPassword(true);
     const form = e.target;
     const account = form.elements["account"].value;
     const password = form.elements["password"].value;
@@ -183,7 +204,7 @@ export default function Login() {
         return
     }
     try {
-      const res = await fetch("http://127.0.0.1:8000/api/auth/verify_change_pwd/", {
+      const res = await fetch(API_ENDPOINTS.verify_change_pwd(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -193,8 +214,8 @@ export default function Login() {
 
       if (!res.ok) {
         const { detail } = await res.json().catch(() => ({}));
-        alert(detail ? `${detail}` : "更改失敗");
-        if(detail=="嘗試次數過多，請重新寄送驗證碼"){
+        alert(detail || "更改密碼失敗，請確認輸入是否正確");
+        if(detail?.includes("嘗試次數過多") || detail?.includes("過期")){
           setVerifyCooldown(0);
         }
         return;
@@ -205,6 +226,9 @@ export default function Login() {
     } catch (err) {
       console.error(err);
       alert("無法連線到伺服器");
+    }
+    finally{
+      setChangingPassword(false)
     }
   };
 
@@ -259,8 +283,9 @@ export default function Login() {
                     type="submit"
                     className="cb-btn"
                     style={{ alignSelf: "flex-start" }}
+                    disabled={Logging}
                   >
-                    登入 Portal
+                    登入
                   </button>
                 </form>
               </>
@@ -303,7 +328,7 @@ export default function Login() {
                             registerNameRef.current?.value
                           )
                         }
-                        disabled={verifyCooldown > 0}
+                        disabled={verifyCooldown > 0 || sendOtpCode}
                         style={
                           verifyCooldown > 0
                             ? {
@@ -348,7 +373,7 @@ export default function Login() {
                     >
                       返回登入
                     </button>
-                    <button type="submit" className="cb-btn">
+                    <button type="submit" className="cb-btn" disabled={Registering}>
                       註冊
                     </button>
                   </div>
@@ -383,7 +408,7 @@ export default function Login() {
                             registerNameRef.current?.value
                           )
                         }
-                        disabled={verifyCooldown > 0}
+                        disabled={verifyCooldown > 0 || sendOtpCode}
                         style={
                           verifyCooldown > 0
                             ? {
@@ -434,7 +459,7 @@ export default function Login() {
                     <button type="button" className="cb-btn ghost" onClick={() => {setView("login")}}>
                       返回登入
                     </button>
-                    <button type="submit" className="cb-btn">送出</button>
+                    <button type="submit" className="cb-btn" disabled={changingPassword}>送出</button>
                   </div>
                 </form>
               </>
@@ -479,7 +504,3 @@ export default function Login() {
     </div>
   );
 }
-
-
-
-
