@@ -807,14 +807,12 @@ export default function ClassroomBooking() {
       let token = localStorage.getItem("access_token");
 
       const doRequest = async (accessToken) =>
-        fetch(API_ENDPOINTS.updateReservationStatus(reservation.id), {
-          method: "PATCH",
+        fetch(API_ENDPOINTS.cancelReservation(reservation.id), {
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          // 後端只接受 approved / rejected，所以取消用 rejected
-          body: JSON.stringify({ status: "rejected" }),
         });
 
       let res = await doRequest(token);
@@ -836,16 +834,16 @@ export default function ClassroomBooking() {
         throw new Error(errBody.detail || errBody.error || "取消預約失敗");
       }
 
-      // 更新前端 myReservations（標記這筆是「使用者取消」）
+      // 更新前端 myReservations
       setMyReservations((prev) =>
         prev.map((r) =>
           r.id === reservation.id
-            ? { ...r, status: "rejected", _cancelledByUser: true }
+            ? { ...r, status: "cancelled" }
             : r
         )
       );
 
-      alert("預約已取消");
+      alert("預約已成功取消");
     } catch (error) {
       console.error("取消預約失敗:", error);
       alert(error.message || "取消預約失敗");
