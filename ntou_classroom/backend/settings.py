@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'accounts',
     'rooms',
     'reservations',
+    'blacklist',
 ]
 
 

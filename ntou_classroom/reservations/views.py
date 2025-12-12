@@ -7,7 +7,7 @@ from django.db.models import Q
 from datetime import datetime, timedelta
 from .models import Reservation
 from .serializers import ReservationSerializer
-
+from blacklist.models import Blacklist
 
 class ReservationListCreateView(generics.ListCreateAPIView):
     """
@@ -40,6 +40,10 @@ class ReservationListCreateView(generics.ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
+        if Blacklist.objects.filter(user=self.request.user).exists():
+            from rest_framework.exceptions import PermissionDenied
+            raise PermissionDenied("你已被列入黑名單，無法預約。")
+        serializer.save(user=self.request.user)
         from rest_framework.exceptions import ValidationError
         from rooms.models import Classroom
         from datetime import date as date_class
