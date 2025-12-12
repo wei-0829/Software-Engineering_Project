@@ -17,7 +17,7 @@ backend/urls.py
 urlpatterns = [
     # Django 預設後台管理介面
     path("admin/", admin.site.urls),
-
+    
     # 帳號驗證相關 API
     # accounts/urls.py 會提供：
     #   POST /api/auth/register/
@@ -33,4 +33,6 @@ urlpatterns = [
     #   GET /api/rooms/classrooms/{room_code}/
     #   GET /api/rooms/classrooms/buildings/
     path("api/rooms/", include("rooms.urls")),
+
+    path("api/blacklist/", include("blacklist.urls")),
 ]
