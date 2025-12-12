@@ -1266,6 +1266,15 @@ export default function ClassroomBooking() {
               </button>
             )}
 
+            {account && (
+              <button
+                className="cb-login-btn"
+                onClick={() => navigate("/profile")}
+              >
+                修改個人資料
+              </button>
+            )}
+
             {account ? (
               <>
                 <button
