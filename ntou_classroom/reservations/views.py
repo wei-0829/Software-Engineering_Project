@@ -5,8 +5,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
+<<<<<<< Updated upstream
 from datetime import datetime, timedelta, date as date_class
 
+=======
+from datetime import datetime, timedelta
+>>>>>>> Stashed changes
 from .models import Reservation
 from .serializers import ReservationSerializer
 from rooms.models import Classroom
@@ -44,6 +48,7 @@ class ReservationListCreateView(generics.ListCreateAPIView):
         )
 
     def perform_create(self, serializer):
+<<<<<<< Updated upstream
         from rest_framework.exceptions import PermissionDenied, ValidationError
 
         # 1️⃣ 黑名單檢查
@@ -177,3 +182,10 @@ def update_reservation_status(request, pk):
 
     serializer = ReservationSerializer(reservation)
     return Response(serializer.data)
+=======
+        serializer.save(
+            user=self.request.user,
+            status="pending", 
+    )
+
+>>>>>>> Stashed changes
