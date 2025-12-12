@@ -9,6 +9,10 @@ from django.contrib.auth import get_user_model
 from .serializers import RegisterSerializer, LoginSerializer
 from accounts.services import send_verification, verify_code, valid_password, VerificationPurpose
 import re
+
+# ✅ reCAPTCHA 驗證（你要放在 ntou_classroom/backend/recaptcha.py）
+from backend.recaptcha import verify_recaptcha
+
 User = get_user_model()
 
 
@@ -24,13 +28,15 @@ class RegisterView(APIView):
     def post(self, request):
         account = (request.data.get("account") or "").strip()
         code = (request.data.get("code") or "").strip()
-        password =(request.data.get("password") or "").strip()
+        password = (request.data.get("password") or "").strip()
+
         if not account:
             return Response({"detail": "缺少 account"}, status=status.HTTP_400_BAD_REQUEST)
         if not code:
             return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
         if not password:
             return Response({"detail": "缺少密碼"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             valid_password(password)
             verify_code(account, code, VerificationPurpose.REGISTER)
@@ -50,48 +56,39 @@ class RegisterView(APIView):
                 },
                 status=status.HTTP_201_CREATED,
             )
-        
+
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class LoginView(APIView):
     """
     POST /api/auth/login/
-    - 驗證帳號密碼，產生 JWT token
-    - 使用 LoginSerializer 驗證帳密
-    - 驗證成功後由 SimpleJWT 建立 access & refresh token
-    - 讓前端可以儲存 token 進行登入狀態維持
+    - 先驗證 reCAPTCHA（避免機器人直接打 API）
+    - 驗證帳號密碼成功後產生 JWT token（access & refresh）
     """
     permission_classes = [AllowAny]
 
     def post(self, request):
+        # ✅ 1) reCAPTCHA 驗證（先擋）
+        recaptcha_token = request.data.get("recaptcha_token")
+        if not verify_recaptcha(recaptcha_token, request.META.get("REMOTE_ADDR")):
+            return Response({"detail": "reCAPTCHA 驗證失敗，請再試一次"}, status=status.HTTP_400_BAD_REQUEST)
+
+        # ✅ 2) 驗證帳密
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         user = serializer.validated_data["user"]
 
-        # 建立 JWT token
+        # ✅ 3) 產生 JWT（refresh + access）
         refresh = RefreshToken.for_user(user)
 
-        # 驗證 input（account / password）
-        serializer = LoginSerializer(data=request.data)
-
-        # 若失敗，直接回應錯誤，例如：帳號或密碼錯誤
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        # serializer.validated_data["user"] 就是經過驗證後找到的 Django User
-        user = serializer.validated_data["user"]
-
-        # SimpleJWT：產生 refresh token + access token
-        refresh = RefreshToken.for_user(user)
-
-        # 【關鍵修改】在 access token 的 payload 中加入角色資訊
-        refresh['is_staff']=user.is_staff
-        refresh['is_superuser']=user.is_superuser
-        refresh.access_token['is_staff'] = user.is_staff
-        refresh.access_token['is_superuser'] = user.is_superuser
+        # 【關鍵修改】在 token payload 中加入角色資訊
+        refresh["is_staff"] = user.is_staff
+        refresh["is_superuser"] = user.is_superuser
+        refresh.access_token["is_staff"] = user.is_staff
+        refresh.access_token["is_superuser"] = user.is_superuser
 
         # 回傳 token 與使用者資訊給前端
         return Response(
@@ -119,7 +116,7 @@ class RefreshTokenView(APIView):
         refresh_token = request.data.get("refresh")
         if not refresh_token:
             return Response(
-                {"detail": "缺少 refresh token"}, 
+                {"detail": "缺少 refresh token"},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -131,9 +128,9 @@ class RefreshTokenView(APIView):
                 },
                 status=status.HTTP_200_OK,
             )
-        except TokenError as e:
+        except TokenError:
             return Response(
-                {"detail": "無效或過期的 refresh token"}, 
+                {"detail": "無效或過期的 refresh token"},
                 status=status.HTTP_401_UNAUTHORIZED
             )
 
@@ -162,13 +159,12 @@ class SendVerificationView(APIView):
             return Response({"detail": e.message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 
-
 class ChangePasswordView(APIView):
     permission_classes = [AllowAny]
 
     def post(self, request):
         email = (request.data.get("account") or "").strip()
-    
+
         if not email:
             return Response({"detail": "缺少 account(email)"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -182,7 +178,8 @@ class ChangePasswordView(APIView):
             return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
         except Exception as e:
             return Response({"detail": e.message}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
-        
+
+
 class VerifyChangePasswordView(APIView):
     permission_classes = [AllowAny]
 
@@ -197,11 +194,14 @@ class VerifyChangePasswordView(APIView):
             return Response({"detail": "缺少驗證碼"}, status=status.HTTP_400_BAD_REQUEST)
         if not password:
             return Response({"detail": "缺少新密碼"}, status=status.HTTP_400_BAD_REQUEST)
+
         user = User.objects.filter(username=account).first()
         if not user:
             return Response({"detail": "找不到使用者"}, status=status.HTTP_404_NOT_FOUND)
+
         if user.check_password(password):
-            return Response({"detail":"無法使用相同密碼"},status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "無法使用相同密碼"}, status=status.HTTP_400_BAD_REQUEST)
+
         try:
             valid_password(password)
             verify_code(account, code, VerificationPurpose.CHANGE_PASSWORD)
@@ -210,7 +210,6 @@ class VerifyChangePasswordView(APIView):
         except Exception:
             return Response({"detail": "驗證碼驗證失敗"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
-        # 更新密碼，若有傳 name 也一併更新
         user.set_password(password)
         user.save()
 
