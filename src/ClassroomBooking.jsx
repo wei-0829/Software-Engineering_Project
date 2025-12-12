@@ -807,14 +807,12 @@ export default function ClassroomBooking() {
       let token = localStorage.getItem("access_token");
 
       const doRequest = async (accessToken) =>
-        fetch(API_ENDPOINTS.updateReservationStatus(reservation.id), {
-          method: "PATCH",
+        fetch(API_ENDPOINTS.cancelReservation(reservation.id), {
+          method: "DELETE",
           headers: {
             "Content-Type": "application/json",
             Authorization: `Bearer ${accessToken}`,
           },
-          // 後端只接受 approved / rejected，所以取消用 rejected
-          body: JSON.stringify({ status: "rejected" }),
         });
 
       let res = await doRequest(token);
@@ -836,16 +834,16 @@ export default function ClassroomBooking() {
         throw new Error(errBody.detail || errBody.error || "取消預約失敗");
       }
 
-      // 更新前端 myReservations（標記這筆是「使用者取消」）
+      // 更新前端 myReservations
       setMyReservations((prev) =>
         prev.map((r) =>
           r.id === reservation.id
-            ? { ...r, status: "rejected", _cancelledByUser: true }
+            ? { ...r, status: "cancelled" }
             : r
         )
       );
 
-      alert("預約已取消");
+      alert("預約已成功取消");
     } catch (error) {
       console.error("取消預約失敗:", error);
       alert(error.message || "取消預約失敗");
@@ -900,13 +898,22 @@ export default function ClassroomBooking() {
     }
 
     // 優先顯示從後端抓到的 myReservations
-    const list = hasServerHistory ? myReservations : history;
+    const rawList = hasServerHistory ? myReservations : history;
+
+    // 依「送出時間」從新到舊排序
+    const list = [...rawList].sort((a, b) => {
+      const getTime = (x) => {
+        const t = x.created_at || x.ts || x.date;
+        return t ? new Date(t).getTime() : 0;
+      };
+      return getTime(b) - getTime(a);
+    });
 
     return (
       <div className="cb-section">
         <h2 className="cb-section-title">我的教室預約歷史</h2>
         <ol className="cb-list dashed cb-history-list">
-          {[...list].reverse().map((item, idx) => {
+          {list.map((item, idx) => {
             const fromServer = "classroom" in item;
 
             const room = fromServer ? item.classroom : item.room;
@@ -920,6 +927,13 @@ export default function ClassroomBooking() {
             const canCancel =
               fromServer && status !== "rejected" && status !== "cancelled";
 
+            const submittedAt =
+              item.created_at
+                ? new Date(item.created_at)
+                : item.ts
+                ? new Date(item.ts)
+                : null;
+
             return (
               <li
                 key={(item.id || item.ts) + "-" + idx}
@@ -931,19 +945,15 @@ export default function ClassroomBooking() {
                   <div>
                     日期：{date} | 時段：{timeLabel}
                   </div>
-                  <div style={{ fontSize: 13, color: "#6b7280" }}>
-                    大樓：
-                    {item.buildingName || item.buildingCode || "—"}
-                  </div>
-                  {item.ts && (
+                  {submittedAt && (
                     <div
                       style={{
                         fontSize: 12,
-                        color: "#9ca3af",
+                        color: "#6b7280",
                         marginTop: 4,
                       }}
                     >
-                      建立時間：{new Date(item.ts).toLocaleString()}
+                      送出時間：{submittedAt.toLocaleString()}
                     </div>
                   )}
                 </div>
@@ -973,19 +983,52 @@ export default function ClassroomBooking() {
   };
 
   /** 管理員租借請求審核頁 */
-const RequestPanel = () => {
-  useEffect(() => {
-    if (!isAdmin) return;
+  const RequestPanel = () => {
+    useEffect(() => {
+      if (!isAdmin) return;
 
-    const fetchAllReservations = async () => {
+      const fetchAllReservations = async () => {
+        try {
+          const token = localStorage.getItem("access_token");
+          const res = await fetch(
+            `${API_ENDPOINTS.reservations()}?view_all=true`,
+            {
+              headers: {
+                Authorization: `Bearer ${token}`,
+              },
+            }
+          );
+
+          if (res.status === 401) {
+            await refreshAccessToken();
+            return;
+          }
+
+          if (!res.ok) throw new Error("載入預約列表失敗");
+
+          const data = await res.json();
+          setAllReservations(data);
+        } catch (error) {
+          console.error("載入預約列表失敗:", error);
+          alert("載入預約列表失敗");
+        }
+      };
+
+      fetchAllReservations();
+    }, [isAdmin, showRequests, refreshAccessToken]);
+
+    const handleReviewReservation = async (reservationId, newStatus) => {
       try {
         const token = localStorage.getItem("access_token");
         const res = await fetch(
-          `${API_ENDPOINTS.reservations()}?view_all=true`,
+          API_ENDPOINTS.updateReservationStatus(reservationId),
           {
+            method: "PATCH",
             headers: {
+              "Content-Type": "application/json",
               Authorization: `Bearer ${token}`,
             },
+            body: JSON.stringify({ status: newStatus }),
           }
         );
 
@@ -994,120 +1037,94 @@ const RequestPanel = () => {
           return;
         }
 
-        if (!res.ok) throw new Error("載入預約列表失敗");
+        if (!res.ok) throw new Error("更新預約狀態失敗");
 
-        const data = await res.json();
-        setAllReservations(data);
+        setAllReservations((prev) =>
+          prev.map((r) =>
+            r.id === reservationId ? { ...r, status: newStatus } : r
+          )
+        );
+
+        setMyReservations((prev) =>
+          prev.map((r) =>
+            r.id === reservationId ? { ...r, status: newStatus } : r
+          )
+        );
+
+        alert(`預約已${newStatus === "approved" ? "批准" : "拒絕"}`);
       } catch (error) {
-        console.error("載入預約列表失敗:", error);
-        alert("載入預約列表失敗");
+        console.error("更新預約狀態失敗:", error);
+        alert("更新預約狀態失敗");
       }
     };
 
-    fetchAllReservations();
-  }, [isAdmin, showRequests, refreshAccessToken]);
+    // 只取 pending，依送出時間由新到舊排序
+    const pendingReservations = allReservations
+      .filter((r) => r.status === "pending")
+      .slice()
+      .sort((a, b) => {
+        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+        return tb - ta; // 新 → 舊
+      });
 
-  const handleReviewReservation = async (reservationId, newStatus) => {
-    try {
-      const token = localStorage.getItem("access_token");
-      const res = await fetch(
-        API_ENDPOINTS.updateReservationStatus(reservationId),
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({ status: newStatus }),
-        }
-      );
-
-      if (res.status === 401) {
-        await refreshAccessToken();
-        return;
-      }
-
-      if (!res.ok) throw new Error("更新預約狀態失敗");
-
-      setAllReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservationId ? { ...r, status: newStatus } : r
-        )
-      );
-
-      setMyReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservationId ? { ...r, status: newStatus } : r
-        )
-      );
-
-      alert(`預約已${newStatus === "approved" ? "批准" : "拒絕"}`);
-    } catch (error) {
-      console.error("更新預約狀態失敗:", error);
-      alert("更新預約狀態失敗");
-    }
+    return (
+      <div className="cb-section">
+        <h2 className="cb-section-title">租借請求管理（僅管理員）</h2>
+        {pendingReservations.length === 0 ? (
+          <div className="cb-selection-banner">
+            目前沒有任何待處理的請求。
+          </div>
+        ) : (
+          <ol className="cb-list dashed">
+            {pendingReservations.map((reservation) => (
+              <li key={reservation.id}>
+                <div style={{ fontWeight: 800 }}>
+                  教室：{reservation.classroom}
+                </div>
+                <div>
+                  申請人：{reservation.user_email || "未知"}
+                  {reservation.user_name && ` (${reservation.user_name})`}
+                </div>
+                <div>
+                  日期：{reservation.date} | 時段：{reservation.time_slot}
+                </div>
+                <div style={{ color: "#6b7280", fontSize: 13 }}>
+                  用途：{reservation.reason || "無"}
+                </div>
+                <div style={{ color: "#6b7280", fontSize: 13 }}>
+                  送出時間：
+                  {reservation.created_at &&
+                    new Date(reservation.created_at).toLocaleString()}
+                </div>
+                <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
+                  <button
+                    className="cb-btn"
+                    onClick={() =>
+                      handleReviewReservation(reservation.id, "approved")
+                    }
+                  >
+                    批准
+                  </button>
+                  <button
+                    className="cb-btn"
+                    style={{ background: "#d32f2f" }}
+                    onClick={() =>
+                      handleReviewReservation(reservation.id, "rejected")
+                    }
+                  >
+                    拒絕
+                  </button>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </div>
+    );
   };
 
-  const pendingReservations = allReservations.filter(
-    (r) => r.status === "pending"
-  );
-
-  return (
-    <div className="cb-section">
-      <h2 className="cb-section-title">租借請求管理（僅管理員）</h2>
-      {pendingReservations.length === 0 ? (
-        <div className="cb-selection-banner">
-          目前沒有任何待處理的請求。
-        </div>
-      ) : (
-        <ol className="cb-list dashed">
-          {pendingReservations.map((reservation) => (
-            <li key={reservation.id}>
-              <div style={{ fontWeight: 800 }}>
-                教室：{reservation.classroom}
-              </div>
-              <div>
-                申請人：{reservation.user_email || "未知"}
-                {reservation.user_name && ` (${reservation.user_name})`}
-              </div>
-              <div>
-                日期：{reservation.date} | 時段：{reservation.time_slot}
-              </div>
-              <div style={{ color: "#6b7280", fontSize: 13 }}>
-                用途：{reservation.reason || "無"}
-              </div>
-              <div style={{ color: "#6b7280", fontSize: 13 }}>
-                送出時間：
-                {new Date(reservation.created_at).toLocaleString()}
-              </div>
-              <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                <button
-                  className="cb-btn"
-                  onClick={() =>
-                    handleReviewReservation(reservation.id, "approved")
-                  }
-                >
-                  批准
-                </button>
-                <button
-                  className="cb-btn"
-                  style={{ background: "#d32f2f" }}
-                  onClick={() =>
-                    handleReviewReservation(reservation.id, "rejected")
-                  }
-                >
-                  拒絕
-                </button>
-              </div>
-            </li>
-          ))}
-        </ol>
-      )}
-    </div>
-  );
-};
-
-
+  /** 被選中的大樓資料 */
   const selectedRoomMeta = useMemo(() => {
     if (!selectedRoom) return null;
     return classrooms.find((c) => c.room_code === selectedRoom);
