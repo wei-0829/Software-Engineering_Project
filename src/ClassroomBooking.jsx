@@ -934,6 +934,14 @@ export default function ClassroomBooking() {
                 ? new Date(item.ts)
                 : null;
 
+            // ⭐ 申請用途（拿不到就顯示「無」）
+            const purpose =
+              item.purpose ||
+              item.reason ||
+              item.usage ||
+              item.apply_reason ||
+              "無";
+
             return (
               <li
                 key={(item.id || item.ts) + "-" + idx}
@@ -945,6 +953,19 @@ export default function ClassroomBooking() {
                   <div>
                     日期：{date} | 時段：{timeLabel}
                   </div>
+
+                  {/* ⭐ 申請用途（永遠顯示） */}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      marginTop: 4,
+                    }}
+                  >
+                    申請用途：{purpose}
+                  </div>
+
+                  {/* 送出時間 */}
                   {submittedAt && (
                     <div
                       style={{
@@ -1090,7 +1111,7 @@ export default function ClassroomBooking() {
                   日期：{reservation.date} | 時段：{reservation.time_slot}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  用途：{reservation.reason || "無"}
+                  申請用途：{reservation.reason || "無"}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
                   送出時間：
