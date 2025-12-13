@@ -25,6 +25,9 @@ export const API_ENDPOINTS = {
   // 🔥🔥 黑名單功能新增 ↓↓↓
   users: () => `${API_BASE_URL}/api/accounts/users/`,
   userDetail: (id) => `${API_BASE_URL}/api/accounts/users/${id}/`,
+  //更改使用者資料
+  change_name: () => `${API_BASE_URL}/api/auth/change_name/`,
+  change_password: () => `${API_BASE_URL}/api/auth/change_password/`,
 };
 
 export default API_BASE_URL;

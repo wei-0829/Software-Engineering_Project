@@ -37,8 +37,6 @@ export default function ProfilePage() {
     setDisplayName(user || "");
   }, [user]);
 
-  // ============ 你之後要接後端的地方（先保留接口） ============
-  // 1) 更新使用者名稱（PATCH）
   const saveDisplayName = async () => {
     if (!displayName.trim()) {
       alert("使用者名稱不能為空");
@@ -47,26 +45,12 @@ export default function ProfilePage() {
 
     setSavingName(true);
 
-    // ✅ 你之後把 API_ENDPOINTS.profile() / API_ENDPOINTS.updateMe() 換成你後端實際的路由
-    // 這裡先用一個「安全的佔位寫法」：如果沒有 endpoint，就只做前端提示
-    const endpoint =
-      API_ENDPOINTS?.profile?.() ||
-      API_ENDPOINTS?.me?.() ||
-      API_ENDPOINTS?.usersMe?.();
-
-    // 沒 endpoint：先當作 UI 完成
-    if (!endpoint) {
-      setTimeout(() => {
-        setSavingName(false);
-        setEditNameMode(false);
-        alert("（前端完成）之後接上後端 API 即可真正儲存名稱");
-      }, 300);
-      return;
-    }
+    // 推導 API 路徑：假設 login 是 .../api/auth/login/，則 profile 為 .../api/auth/profile/
+    const endpoint = API_ENDPOINTS.change_name()
 
     const makeRequest = async (accessToken) =>
       fetch(endpoint, {
-        method: "PATCH",
+        method: "PATCH", // 更新部分資料
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
@@ -93,6 +77,9 @@ export default function ProfilePage() {
       if (!res.ok) throw new Error(data.detail || "更新使用者名稱失敗");
 
       setEditNameMode(false);
+      // 更新 localStorage，這樣回到首頁時 useAuth 重新讀取就會顯示新名稱
+      localStorage.setItem("name", displayName.trim());
+      
       alert("使用者名稱已更新");
     } catch (e) {
       alert(e.message || "更新失敗");
@@ -101,7 +88,6 @@ export default function ProfilePage() {
     }
   };
 
-  // 2) 修改密碼（PATCH / POST）
   const savePassword = async () => {
     if (!currentPwd || !newPwd || !confirmPwd) {
       alert("請完整填寫舊密碼與新密碼");
@@ -118,27 +104,12 @@ export default function ProfilePage() {
 
     setSavingPwd(true);
 
-    // ✅ 你之後把 API_ENDPOINTS.changePassword() 換成你後端實際路由
-    const endpoint =
-      API_ENDPOINTS?.changePassword?.() ||
-      API_ENDPOINTS?.password?.() ||
-      API_ENDPOINTS?.mePassword?.();
-
-    if (!endpoint) {
-      setTimeout(() => {
-        setSavingPwd(false);
-        setEditPwdMode(false);
-        setCurrentPwd("");
-        setNewPwd("");
-        setConfirmPwd("");
-        alert("（前端完成）之後接上後端 API 即可真正修改密碼");
-      }, 300);
-      return;
-    }
+    // 推導 API 路徑： .../api/auth/change-password/
+    const endpoint = API_ENDPOINTS.change_password();
 
     const makeRequest = async (accessToken) =>
       fetch(endpoint, {
-        method: "PATCH",
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${accessToken}`,
