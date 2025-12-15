@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
   reservations: () => `${API_BASE_URL}/api/reservations/`,
   occupiedSlots: (params) => `${API_BASE_URL}/api/reservations/occupied/${params ? `?${params}` : ''}`,
   updateReservationStatus: (id) => `${API_BASE_URL}/api/reservations/${id}/status/`,
+  cancelReservation: (id) => `${API_BASE_URL}/api/reservations/${id}/cancel/`,
   
   // 認證相關
   login: () => `${API_BASE_URL}/api/auth/login/`,

@@ -595,6 +595,61 @@ export default function ClassroomBooking() {
       return statusMap[status] || status;
     };
 
+    // 取消預約
+    const handleCancelReservation = async (reservation) => {
+      if (
+        !window.confirm(
+          `確定要取消 ${reservation.classroom} ${reservation.date} ${reservation.time_slot} 的預約嗎？`
+        )
+      ) {
+        return;
+      }
+
+      try {
+        let token = localStorage.getItem("access_token");
+
+        const doRequest = async (accessToken) =>
+          fetch(API_ENDPOINTS.cancelReservation(reservation.id), {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${accessToken}`,
+            },
+          });
+
+        let res = await doRequest(token);
+
+        // token 過期
+        if (res.status === 401) {
+          const newToken = await refreshAccessToken();
+          if (!newToken) {
+            alert("登入已過期，請重新登入");
+            logout();
+            return;
+          }
+          res = await doRequest(newToken);
+        }
+
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({}));
+          console.error("取消預約失敗：", res.status, errBody);
+          throw new Error(errBody.error || "取消預約失敗");
+        }
+
+        // 更新前端 myReservations
+        setMyReservations((prev) =>
+          prev.map((r) =>
+            r.id === reservation.id ? { ...r, status: "cancelled" } : r
+          )
+        );
+
+        alert("預約已成功取消");
+      } catch (error) {
+        console.error("取消預約失敗:", error);
+        alert(error.message || "取消預約失敗");
+      }
+    };
+
     return (
       <div className="cb-section">
         <h2 className="cb-section-title">我的教室預約歷史</h2>
@@ -613,9 +668,33 @@ export default function ClassroomBooking() {
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
                   用途：{reservation.reason || "無"}
                 </div>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  狀態：{getStatusText(reservation.status)} | 建立時間：
-                  {new Date(reservation.created_at).toLocaleString()}
+                <div
+                  style={{
+                    color: "#6b7280",
+                    fontSize: 13,
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                  }}
+                >
+                  <span>
+                    狀態：{getStatusText(reservation.status)} | 建立時間：
+                    {new Date(reservation.created_at).toLocaleString()}
+                  </span>
+                  {(reservation.status === "pending" ||
+                    reservation.status === "approved") && (
+                    <button
+                      className="cb-btn"
+                      style={{
+                        padding: "4px 10px",
+                        fontSize: 12,
+                        background: "#dc2626",
+                      }}
+                      onClick={() => handleCancelReservation(reservation)}
+                    >
+                      取消預約
+                    </button>
+                  )}
                 </div>
               </li>
             ))}
@@ -808,7 +887,6 @@ export default function ClassroomBooking() {
                 onClick={() => setBuildingSearch("")}
                 aria-label="清除大樓搜尋"
               >
-                ×
               </button>
             )}
           </div>

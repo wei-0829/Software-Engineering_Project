@@ -32,8 +32,12 @@ class Reservation(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        unique_together = ("classroom", "date", "time_slot")
+        # unique_together 已移除，改用 perform_create 的驗證邏輯
+        # 原因：已取消或已拒絕的預約不應阻止新預約（見 views.py perform_create）
         ordering = ["-date", "-created_at"]
+        indexes = [
+            models.Index(fields=["classroom", "date", "time_slot", "status"]),
+        ]
 
     def __str__(self):
         return f"{self.date} {self.time_slot} {self.classroom} - {self.user.username}"

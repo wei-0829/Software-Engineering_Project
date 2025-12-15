@@ -221,3 +221,48 @@ def update_reservation_status(request, pk):
     serializer = ReservationSerializer(reservation)
     return Response(serializer.data)
 
+
+@api_view(['DELETE'])
+@permission_classes([permissions.IsAuthenticated])
+def cancel_reservation(request, pk):
+    """
+    DELETE /api/reservations/<id>/cancel/
+    
+    使用者取消自己的預約
+    
+    只能取消：
+    - 自己的預約
+    - pending 或 approved 狀態的預約
+    """
+    try:
+        reservation = Reservation.objects.get(pk=pk)
+    except Reservation.DoesNotExist:
+        return Response(
+            {"error": "預約不存在"}, 
+            status=404
+        )
+    
+    # 檢查是否為預約擁有者
+    if reservation.user != request.user:
+        return Response(
+            {"error": "只能取消自己的預約"}, 
+            status=403
+        )
+    
+    # 檢查預約狀態是否可以取消
+    if reservation.status not in ['pending', 'approved']:
+        return Response(
+            {"error": f"此預約狀態為『{dict(reservation.STATUS_CHOICES).get(reservation.status)}』，無法取消"}, 
+            status=400
+        )
+    
+    # 更新狀態為已取消
+    reservation.status = 'cancelled'
+    reservation.save()
+    
+    serializer = ReservationSerializer(reservation)
+    return Response({
+        "message": "預約已成功取消",
+        "reservation": serializer.data
+    })
+
