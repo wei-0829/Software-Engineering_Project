@@ -567,3 +567,13 @@
   border-color: #2563eb;
   box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
 }
+.cb-hero { position: relative; }
+
+.cb-hero-actions{
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
