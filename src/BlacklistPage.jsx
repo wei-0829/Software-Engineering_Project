@@ -1,125 +1,157 @@
 // Blacklist.jsx
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./BlacklistPage.css";
 import { useAuth } from "./useAuth";
+import { API_ENDPOINTS } from "./config/api.js";
 
 export default function Blacklist() {
   const navigate = useNavigate();
-  const { isAdmin } = useAuth();
+  const { isAdmin, refreshAccessToken } = useAuth();
 
   const [normalUsers, setNormalUsers] = useState([]);
   const [blacklistedUsers, setBlacklistedUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // 🔹 進頁面時先塞一些「假資料」
+  // ✅ 統一 fetch：自動帶 token + 401 refresh 後重試一次
+  const apiFetch = useCallback(
+    async (url, options = {}, retry = true) => {
+      const token = localStorage.getItem("access_token");
+
+      const res = await fetch(url, {
+        ...options,
+        headers: {
+          "Content-Type": "application/json",
+          ...(options.headers || {}),
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      });
+
+      if (res.status === 401 && retry) {
+        await refreshAccessToken();
+        return apiFetch(url, options, false);
+      }
+
+      return res;
+    },
+    [refreshAccessToken]
+  );
+
+  // ✅ 讀取：GET /api/blacklist/users/ -> { normal_users, blacklisted_users }
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.blacklistUsers(), { method: "GET" });
+
+      if (!res.ok) {
+        const text = await res.text();
+        throw new Error(text || "載入黑名單清單失敗");
+      }
+
+      const data = await res.json();
+
+      const normal = (data.normal_users || []).slice().sort((a, b) =>
+        (a.first_name + a.last_name || a.username || a.email || "").localeCompare(
+          b.first_name + b.last_name || b.username || b.email || ""
+        )
+      );
+
+      const black = (data.blacklisted_users || []).slice().sort((a, b) =>
+        (a.first_name + a.last_name || a.username || a.email || "").localeCompare(
+          b.first_name + b.last_name || b.username || b.email || ""
+        )
+      );
+
+      setNormalUsers(normal);
+      setBlacklistedUsers(black);
+    } catch (err) {
+      console.error(err);
+      alert("載入使用者清單失敗，請稍後再試");
+    } finally {
+      setLoading(false);
+    }
+  }, [apiFetch]);
+
   useEffect(() => {
     if (!isAdmin) {
       alert("只有管理員才能存取此頁面");
       navigate("/");
       return;
     }
+    fetchUsers();
+  }, [isAdmin, navigate, fetchUsers]);
 
-    // 之後要改成從後端撈資料，就把這裡換掉即可
-    const mockNormal = [
-      {
-        id: 1,
-        name: "王小明",
-        student_id: "1123456",
-        email: "s1123456@ntou.edu.tw",
-        is_blacklisted: false,
-      },
-      {
-        id: 2,
-        name: "陳小美",
-        student_id: "1127890",
-        email: "s1127890@ntou.edu.tw",
-        is_blacklisted: false,
-      },
-      {
-        id: 3,
-        name: "李同學",
-        student_id: "1130011",
-        email: "s1130011@ntou.edu.tw",
-        is_blacklisted: false,
-      },
-    ];
+  // ✅ 停權：POST /api/blacklist/ban/ { user_id, reason }
+  const handleBlockUser = async (user) => {
+    const displayName =
+      (user.first_name || "") + (user.last_name || "") || user.username || user.email;
 
-    const mockBlacklisted = [
-      {
-        id: 4,
-        name: "林問題",
-        student_id: "1119999",
-        email: "s1119999@ntou.edu.tw",
-        is_blacklisted: true,
-      },
-    ];
+    if (!window.confirm(`確定要將 ${displayName} 加入黑名單嗎？`)) return;
 
-    setNormalUsers(mockNormal);
-    setBlacklistedUsers(mockBlacklisted);
-    setLoading(false);
-  }, [isAdmin, navigate]);
-
-  // 🔹 停權（左 -> 右），暫時只改前端 state，不打 API
-  const handleBlockUser = (user) => {
-    if (!window.confirm(`確定要將 ${user.name || user.email} 加入黑名單嗎？`)) {
-      return;
-    }
+    // 你後端支援 reason（可選）
+    const reason = window.prompt("可選填：停權原因（可留空）", "") ?? "";
+    if (reason === null) return; // 使用者按取消（保險）
 
     setSaving(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.banUser(), {
+        method: "POST",
+        body: JSON.stringify({ user_id: user.id, reason }),
+      });
 
-    // 模擬一下 loading（其實可以不用 setTimeout）
-    setTimeout(() => {
-      setNormalUsers((list) => list.filter((u) => u.id !== user.id));
-      setBlacklistedUsers((list) =>
-        [...list, { ...user, is_blacklisted: true }].sort((a, b) =>
-          (a.name || a.email).localeCompare(b.name || b.email)
-        )
-      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "停權失敗");
+      }
+
+      await fetchUsers();
+      alert(`已將 ${displayName} 加入黑名單`);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "停權失敗，請稍後再試");
+    } finally {
       setSaving(false);
-      alert(`已將 ${user.name || user.email} 加入黑名單（前端測試資料）`);
-    }, 200);
+    }
   };
 
-  // 🔹 恢復（右 -> 左），一樣只動前端 state
-  const handleRestoreUser = (user) => {
-    if (!window.confirm(`確定要恢復 ${user.name || user.email} 的使用權嗎？`)) {
-      return;
-    }
+  // ✅ 恢復：POST /api/blacklist/unban/ { user_id }
+  const handleRestoreUser = async (user) => {
+    const displayName =
+      (user.first_name || "") + (user.last_name || "") || user.username || user.email;
+
+    if (!window.confirm(`確定要恢復 ${displayName} 的使用權嗎？`)) return;
 
     setSaving(true);
+    try {
+      const res = await apiFetch(API_ENDPOINTS.unbanUser(), {
+        method: "POST",
+        body: JSON.stringify({ user_id: user.id }),
+      });
 
-    setTimeout(() => {
-      setBlacklistedUsers((list) => list.filter((u) => u.id !== user.id));
-      setNormalUsers((list) =>
-        [...list, { ...user, is_blacklisted: false }].sort((a, b) =>
-          (a.name || a.email).localeCompare(b.name || b.email)
-        )
-      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "恢復失敗");
+      }
+
+      await fetchUsers();
+      alert(`已恢復 ${displayName} 的使用權`);
+    } catch (err) {
+      console.error(err);
+      alert(err.message || "恢復失敗，請稍後再試");
+    } finally {
       setSaving(false);
-      alert(`已恢復 ${user.name || user.email} 的使用權（前端測試資料）`);
-    }, 200);
+    }
   };
 
-  if (!isAdmin) {
-    return null;
-  }
+  if (!isAdmin) return null;
 
   return (
     <div className="cb-root">
       <section className="cb-main" style={{ width: "100%" }}>
-        {/* 上方藍色區 + 返回按鈕（沿用風格） */}
         <div className="cb-hero">
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginLeft: "auto",
-              alignItems: "center",
-            }}
-          >
+          <div style={{ display: "flex", gap: 10, marginLeft: "auto", alignItems: "center" }}>
             <button className="cb-login-btn" onClick={() => navigate("/")}>
               回到預約畫面
             </button>
@@ -137,15 +169,11 @@ export default function Blacklist() {
               <div className="bl-column">
                 <div className="bl-column-header">
                   <h2 className="cb-section-title">正常使用者</h2>
-                  <span className="bl-count-badge">
-                    共 {normalUsers.length} 人
-                  </span>
+                  <span className="bl-count-badge">共 {normalUsers.length} 人</span>
                 </div>
 
                 {normalUsers.length === 0 ? (
-                  <div className="cb-selection-banner bl-empty">
-                    目前沒有可用的正常使用者。
-                  </div>
+                  <div className="cb-selection-banner bl-empty">目前沒有可用的正常使用者。</div>
                 ) : (
                   <div className="cb-table-wrap bl-table-wrap">
                     <table className="cb-table bl-table">
@@ -160,8 +188,8 @@ export default function Blacklist() {
                       <tbody>
                         {normalUsers.map((u) => (
                           <tr key={u.id}>
-                            <td>{u.name || "—"}</td>
-                            <td>{u.student_id || u.username || "—"}</td>
+                            <td>{(u.first_name || "") + (u.last_name || "") || "—"}</td>
+                            <td>{u.username || "—"}</td>
                             <td>{u.email || "—"}</td>
                             <td>
                               <button
@@ -180,10 +208,9 @@ export default function Blacklist() {
                 )}
               </div>
 
-              {/* 中間箭頭區域 */}
               <div className="bl-arrows">
-                <div className="bl-arrow-icon bl-arrow-red">⇨</div>   {/* 停權：紅色 */}
-                <div className="bl-arrow-icon bl-arrow-green">⇦</div> {/* 恢復：綠色 */}
+                <div className="bl-arrow-icon bl-arrow-red">⇨</div>
+                <div className="bl-arrow-icon bl-arrow-green">⇦</div>
               </div>
 
               {/* 右：黑名單 */}
@@ -196,9 +223,7 @@ export default function Blacklist() {
                 </div>
 
                 {blacklistedUsers.length === 0 ? (
-                  <div className="cb-selection-banner bl-empty">
-                    目前黑名單是空的。
-                  </div>
+                  <div className="cb-selection-banner bl-empty">目前黑名單是空的。</div>
                 ) : (
                   <div className="cb-table-wrap bl-table-wrap">
                     <table className="cb-table bl-table">
@@ -213,8 +238,8 @@ export default function Blacklist() {
                       <tbody>
                         {blacklistedUsers.map((u) => (
                           <tr key={u.id}>
-                            <td>{u.name || "—"}</td>
-                            <td>{u.student_id || u.username || "—"}</td>
+                            <td>{(u.first_name || "") + (u.last_name || "") || "—"}</td>
+                            <td>{u.username || "—"}</td>
                             <td>{u.email || "—"}</td>
                             <td>
                               <button
