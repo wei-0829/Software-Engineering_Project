@@ -1,0 +1,175 @@
+/* 中間內容排版（延續你 EditingClassroom 的風格） */
+
+.profile-grid {
+  margin-top: 18px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
+  background: #fff;
+  border: 1px solid #e6eefc;
+}
+
+.profile-row {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #eef2ff;
+}
+
+.profile-row:nth-child(even) {
+  background: #f6f9ff;
+}
+
+.profile-label {
+  font-weight: 800;
+  color: #1f2937;
+  letter-spacing: 0.04em;
+}
+
+.profile-value {
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.profile-actions {
+  justify-content: space-between;
+}
+
+.profile-text {
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.profile-text.mono {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 700;
+}
+
+.profile-hint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.profile-input {
+  width: min(420px, 100%);
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 2px solid #c4d3f7;
+  background: #f9fbff;
+  font-size: 16px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.profile-input:focus {
+  border-color: #2563eb;
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+}
+
+.profile-btn {
+  padding: 10px 18px;
+  border-radius: 999px;
+}
+
+.profile-btn.danger {
+  background: #d32f2f;
+}
+
+/* 身分 pill */
+.role-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.role-pill.is-admin {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+}
+
+.role-pill.is-user {
+  background: rgba(17, 24, 39, 0.06);
+  color: #111827;
+  border: 1px solid rgba(17, 24, 39, 0.18);
+}
+
+/* 修改密碼區塊 */
+.pwd-panel {
+  margin-top: 18px;
+  border-radius: 16px;
+  background: #f8fbff;
+  border: 1px solid #e0e8fa;
+  padding: 18px;
+}
+
+.pwd-title {
+  font-weight: 900;
+  font-size: 18px;
+  color: #1f2937;
+  margin-bottom: 12px;
+}
+
+.pwd-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.pwd-item {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pwd-label {
+  font-size: 14px;
+  font-weight: 800;
+  color: #4b5563;
+}
+
+.pwd-input {
+  padding: 10px 14px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  font-size: 16px;
+  outline: none;
+  transition: 0.2s ease;
+}
+
+.pwd-input:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.22);
+}
+
+.pwd-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 4px;
+}
+
+.pwd-note {
+  margin-top: 10px;
+  color: #6b7280;
+  font-size: 13px;
+}
+
+@media (max-width: 900px) {
+  .profile-row {
+    grid-template-columns: 1fr;
+  }
+  .pwd-grid {
+    grid-template-columns: 1fr;
+  }
+}

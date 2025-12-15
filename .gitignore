@@ -3,7 +3,7 @@ node_modules/
 dist/
 
 # Python (Django)
-__pycache__/
+__pycache__/python manage.py createsuperuser
 *.pyc
 db.sqlite3
 venv/
