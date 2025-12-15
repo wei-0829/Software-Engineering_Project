@@ -156,6 +156,8 @@ function expandBlocks(blocks) {
 function DateTimeCalendar({ room, occupied, onReserve }) {
   const [selectedDate, setSelectedDate] = useState(null); // 目前選到哪一天
   const [selectedTime, setSelectedTime] = useState(""); // 目前選到哪個時段
+  const [purpose, setPurpose] = useState("");
+
 
   // 月曆現在顯示的「月份」（固定在每月 1 號）
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -300,6 +302,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
       date: formatDateLocal(selectedDate), // 本地日期字串
       start: slot.start,
       end: slot.end,
+      reason: purpose.trim(),
     });
   };
 
@@ -400,6 +403,36 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
             </option>
           ))}
         </select>
+
+                {/* 申請用途 */}
+        <div style={{ marginTop: 12 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#4b5563",
+              marginBottom: 6,
+            }}
+          >
+            借用用途說明
+          </label>
+
+          <textarea
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="請簡要說明本次借用用途（例如：課程教學、專題討論、系學會活動…）"
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #d1d5db",
+              fontSize: 14,
+              resize: "none",
+            }}
+          />
+        </div>
 
         <div className="wk-actions" style={{ marginTop: 16 }}>
           <button
@@ -656,7 +689,7 @@ export default function ClassroomBooking() {
   };
 
   /** 預約事件：打後端 /api/reservations/ */
-  const handleReserve = async ({ room, date, start, end }) => {
+  const handleReserve = async ({ room, date, start, end ,reason}) => {
     let token = localStorage.getItem("access_token");
     if (!token) {
       alert("請先登入後再預約");
@@ -671,7 +704,7 @@ export default function ClassroomBooking() {
       classroom: room,
       date: dateString,
       time_slot: `${start}-${end}`,
-      reason: "",
+      reason: reason || "",
     };
 
     const makeRequest = async (accessToken) => {
