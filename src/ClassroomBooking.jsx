@@ -323,7 +323,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     <div className="cal-wrap">
       {/* 左邊：月曆 */}
       <div className="cal-left">
-        <div className="cal-title">選擇日期（未來 6 個月）</div>
+        <div className="cal-title">選擇日期</div>
 
         <div className="cal-month-header">
           <button
@@ -486,6 +486,8 @@ export default function ClassroomBooking() {
   // 使用 useAuth hook 取得所有認證相關的狀態與函式
   // account 是 username (email), user 是使用者名稱, isAdmin 是管理員身份
   const { account, user, isAdmin, logout, refreshAccessToken } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const [occupiedMap, setOccupiedMap] = useState({});
 
@@ -1263,98 +1265,125 @@ export default function ClassroomBooking() {
       {/* 主畫面 */}
       <section className="cb-main">
         <div className="cb-hero">
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginLeft: "auto",
-              alignItems: "center",
+          <div className="cb-hero-actions">
+  {(showHistory || showRequests) && (
+    <button
+      className="cb-login-btn"
+      onClick={handleBackToBooking}
+    >
+      返回預約
+    </button>
+  )}
+
+  {/* ===== 使用者選單（所有登入者都看得到） ===== */}
+  {account ? (
+    <div className="cb-menu">
+      <button
+        className="cb-login-btn"
+        onClick={() => {
+          setShowUserMenu((v) => !v);
+          setShowAdminMenu(false); // 
+}}
+
+      >
+        {user} ▾
+      </button>
+
+      {showUserMenu && (
+        <div className="cb-menu-panel">
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              setShowHistory((v) => !v);
+              setShowRequests(false);
+              setShowUserMenu(false);
             }}
           >
-            {(showHistory || showRequests) && (
-              <button
-                className="cb-login-btn"
-                onClick={handleBackToBooking}
-              >
-                返回預約
-              </button>
-            )}
+            歷史紀錄
+          </button>
 
-            <button
-              className="cb-login-btn"
-              onClick={() => {
-                setShowHistory((v) => !v);
-                if (showRequests) setShowRequests(false);
-              }}
-            >
-              歷史紀錄
-            </button>
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/profile");
+              setShowUserMenu(false);
+            }}
+          >
+            修改個人資料
+          </button>
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => {
-                  setShowRequests((v) => !v);
-                  if (showHistory) setShowHistory(false);
-                }}
-              >
-                確認租借
-              </button>
-            )}
+          <div className="cb-menu-divider" />
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/editing-classroom")}
-              >
-                編輯教室
-              </button>
-            )}
+          <button
+            className="cb-menu-item danger"
+            onClick={handleLogout}
+          >
+            登出
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
+    <button
+      className="cb-login-btn"
+      onClick={() => navigate("/login")}
+    >
+      登入
+    </button>
+  )}
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/blacklist")}
-              >
-                黑名單
-              </button>
-            )}
+  {/* ===== 管理員功能（只有 isAdmin 才會看到） ===== */}
+  {isAdmin && (
+    <div className="cb-menu">
+      <button
+        className="cb-login-btn"
+        onClick={() => {
+        setShowAdminMenu((v) => !v);
+        setShowUserMenu(false); 
+}}
 
-            {account && (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/profile")}
-              >
-                修改個人資料
-              </button>
-            )}
+      >
+        管理員功能 ▾
+      </button>
 
-            {account ? (
-              <>
-                <button
-                  className="cb-login-btn"
-                  style={{ cursor: "default" }}
-                  disabled
-                >
-                  {user}
-                </button>
+      {showAdminMenu && (
+        <div className="cb-menu-panel">
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              setShowRequests((v) => !v);
+              setShowHistory(false);
+              setShowAdminMenu(false);
+            }}
+          >
+            確認租借
+          </button>
 
-                <button
-                  className="cb-login-btn"
-                  onClick={handleLogout}
-                >
-                  登出
-                </button>
-              </>
-            ) : (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/login")}
-              >
-                登入
-              </button>
-            )}
-          </div>
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/editing-classroom");
+              setShowAdminMenu(false);
+            }}
+          >
+            編輯教室
+          </button>
+
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/blacklist");
+              setShowAdminMenu(false);
+            }}
+          >
+            黑名單
+          </button>
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
         </div>
 
         <div className="cb-card">
@@ -1565,7 +1594,7 @@ export default function ClassroomBooking() {
                   <li>登入系統。</li>
                   <li>從左側選擇大樓。</li>
                   <li>在右側進階搜尋條選擇條件與教室。</li>
-                  <li>點選下方時段並提出租借。</li>
+                  <li>點選下方時段及填寫用途說明並提出租借。</li>
                   <li>等待管理員確認。</li>
                 </ol>
               </div>
