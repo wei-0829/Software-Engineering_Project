@@ -5,6 +5,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
 from django.db.models import Q
+from django.core.mail import EmailMessage, send_mail
+from django.conf import settings
+from django.contrib.auth.models import User
+from django.utils.timezone import localtime
+from django.core.validators import validate_email
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 from datetime import datetime, timedelta, date as date_class
 
@@ -95,10 +101,49 @@ class ReservationListCreateView(generics.ListCreateAPIView):
             })
 
         # 7️⃣ 建立預約（只存一次）
-        serializer.save(
+        instance = serializer.save(
             user=self.request.user,
             status="pending"
         )
+
+        # 8️⃣ 寄信通知所有管理員
+        try:
+            # 找出所有工作人員 (is_staff=True)，並取得其使用者名稱 (即 Email)
+            all_staff_usernames = User.objects.filter(is_staff=True).values_list('username', flat=True)
+            staff_emails = []
+            for username in all_staff_usernames:
+                try:
+                    validate_email(username)
+                    staff_emails.append(username)
+                except DjangoValidationError:
+                    continue
+            
+            if staff_emails:
+                created_at_local = localtime(instance.created_at)
+                formatted_time = created_at_local.strftime("%Y年%m月%d日 %H時%M分%S秒")
+
+                subject = f"【新預約通知】{instance.classroom.room_code} - {instance.date}"
+                message = (
+                    f"有新的教室預約申請待審核。\n\n"
+                    f"申請人：{instance.user.get_full_name()}\n"
+                    f"申請人電子郵件：{instance.user.username}\n"
+                    f"教室：{instance.classroom.room_code}\n"
+                    f"日期：{instance.date}\n"
+                    f"預約時段：{instance.time_slot}\n"
+                    f"申請時間: {formatted_time}\n"
+                    f"請登入系統進行審核。"
+                )
+                
+                email = EmailMessage(
+                    subject,
+                    message,
+                    settings.EMAIL_HOST_USER,
+                    [settings.EMAIL_HOST_USER],  # To: 寄件者自己 (避免收件者欄位空白)
+                    staff_emails,  # Bcc: 密件副本給所有管理員
+                )
+                email.send(fail_silently=True)
+        except Exception as e:
+            print(f"寄送通知信失敗: {e}")
 
 
 @api_view(["GET"])
@@ -179,6 +224,30 @@ def update_reservation_status(request, pk):
     reservation.status = new_status
     reservation.save()
 
+    # 寄信通知申請者
+    try:
+        status_text = "已通過" if new_status == "approved" else "未通過"
+        subject = f"【預約審核通知】{reservation.classroom.room_code} - {reservation.date} 審核結果"
+        message = (
+            f"親愛的 {reservation.user.get_full_name() or reservation.user.username} 您好：\n\n"
+            f"您申請的教室預約已有審核結果。\n\n"
+            f"教室：{reservation.classroom.room_code}\n"
+            f"日期：{reservation.date}\n"
+            f"時段：{reservation.time_slot}\n"
+            f"審核結果：{status_text}\n\n"
+            f"請登入系統查看詳細資訊。"
+        )
+        
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [reservation.user.username],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"寄送審核通知信失敗: {e}")
+
     serializer = ReservationSerializer(reservation)
     return Response(serializer.data)
 
@@ -223,10 +292,29 @@ def cancel_reservation(request, pk):
     reservation.status = 'cancelled'
     reservation.save()
     
+    # 寄信通知申請者
+    try:
+        subject = f"【預約取消通知】{reservation.classroom.room_code} - {reservation.date}"
+        message = (
+            f"親愛的 {reservation.user.get_full_name() or reservation.user.username} 您好\n"
+            f"您已成功取消以下教室預約：\n\n"
+            f"教室：{reservation.classroom.room_code}\n"
+            f"日期：{reservation.date}\n"
+            f"時段：{reservation.time_slot}\n\n"
+        )
+        
+        send_mail(
+            subject,
+            message,
+            settings.EMAIL_HOST_USER,
+            [reservation.user.username],
+            fail_silently=True,
+        )
+    except Exception as e:
+        print(f"寄送取消通知信失敗: {e}")
+
     serializer = ReservationSerializer(reservation)
     return Response({
         "message": "預約已成功取消",
         "reservation": serializer.data
     })
-
-

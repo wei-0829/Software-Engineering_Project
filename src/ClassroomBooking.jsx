@@ -156,6 +156,8 @@ function expandBlocks(blocks) {
 function DateTimeCalendar({ room, occupied, onReserve }) {
   const [selectedDate, setSelectedDate] = useState(null); // 目前選到哪一天
   const [selectedTime, setSelectedTime] = useState(""); // 目前選到哪個時段
+  const [purpose, setPurpose] = useState("");
+
 
   // 月曆現在顯示的「月份」（固定在每月 1 號）
   const [currentMonth, setCurrentMonth] = useState(() => {
@@ -300,6 +302,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
       date: formatDateLocal(selectedDate), // 本地日期字串
       start: slot.start,
       end: slot.end,
+      reason: purpose.trim(),
     });
   };
 
@@ -320,7 +323,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     <div className="cal-wrap">
       {/* 左邊：月曆 */}
       <div className="cal-left">
-        <div className="cal-title">選擇日期（未來 6 個月）</div>
+        <div className="cal-title">選擇日期</div>
 
         <div className="cal-month-header">
           <button
@@ -401,6 +404,36 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
           ))}
         </select>
 
+                {/* 申請用途 */}
+        <div style={{ marginTop: 12 }}>
+          <label
+            style={{
+              display: "block",
+              fontSize: 13,
+              fontWeight: 700,
+              color: "#4b5563",
+              marginBottom: 6,
+            }}
+          >
+            借用用途說明
+          </label>
+
+          <textarea
+            value={purpose}
+            onChange={(e) => setPurpose(e.target.value)}
+            placeholder="請簡要說明本次借用用途（例如：課程教學、專題討論、系學會活動…）"
+            rows={3}
+            style={{
+              width: "100%",
+              padding: "10px 12px",
+              borderRadius: 10,
+              border: "1px solid #d1d5db",
+              fontSize: 14,
+              resize: "none",
+            }}
+          />
+        </div>
+
         <div className="wk-actions" style={{ marginTop: 16 }}>
           <button
             className="cb-btn"
@@ -453,6 +486,8 @@ export default function ClassroomBooking() {
   // 使用 useAuth hook 取得所有認證相關的狀態與函式
   // account 是 username (email), user 是使用者名稱, isAdmin 是管理員身份
   const { account, user, isAdmin, logout, refreshAccessToken } = useAuth();
+  const [showUserMenu, setShowUserMenu] = useState(false);
+  const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const [occupiedMap, setOccupiedMap] = useState({});
 
@@ -656,7 +691,7 @@ export default function ClassroomBooking() {
   };
 
   /** 預約事件：打後端 /api/reservations/ */
-  const handleReserve = async ({ room, date, start, end }) => {
+  const handleReserve = async ({ room, date, start, end ,reason}) => {
     let token = localStorage.getItem("access_token");
     if (!token) {
       alert("請先登入後再預約");
@@ -671,7 +706,7 @@ export default function ClassroomBooking() {
       classroom: room,
       date: dateString,
       time_slot: `${start}-${end}`,
-      reason: "",
+      reason: reason || "",
     };
 
     const makeRequest = async (accessToken) => {
@@ -934,6 +969,14 @@ export default function ClassroomBooking() {
                 ? new Date(item.ts)
                 : null;
 
+            // ⭐ 申請用途（拿不到就顯示「無」）
+            const purpose =
+              item.purpose ||
+              item.reason ||
+              item.usage ||
+              item.apply_reason ||
+              "無";
+
             return (
               <li
                 key={(item.id || item.ts) + "-" + idx}
@@ -945,6 +988,19 @@ export default function ClassroomBooking() {
                   <div>
                     日期：{date} | 時段：{timeLabel}
                   </div>
+
+                  {/* ⭐ 申請用途（永遠顯示） */}
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "#6b7280",
+                      marginTop: 4,
+                    }}
+                  >
+                    申請用途：{purpose}
+                  </div>
+
+                  {/* 送出時間 */}
                   {submittedAt && (
                     <div
                       style={{
@@ -1090,7 +1146,7 @@ export default function ClassroomBooking() {
                   日期：{reservation.date} | 時段：{reservation.time_slot}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  用途：{reservation.reason || "無"}
+                  申請用途：{reservation.reason || "無"}
                 </div>
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
                   送出時間：
@@ -1209,89 +1265,125 @@ export default function ClassroomBooking() {
       {/* 主畫面 */}
       <section className="cb-main">
         <div className="cb-hero">
-          <div
-            style={{
-              display: "flex",
-              gap: 10,
-              marginLeft: "auto",
-              alignItems: "center",
+          <div className="cb-hero-actions">
+  {(showHistory || showRequests) && (
+    <button
+      className="cb-login-btn"
+      onClick={handleBackToBooking}
+    >
+      返回預約
+    </button>
+  )}
+
+  {/* ===== 使用者選單（所有登入者都看得到） ===== */}
+  {account ? (
+    <div className="cb-menu">
+      <button
+        className="cb-login-btn"
+        onClick={() => {
+          setShowUserMenu((v) => !v);
+          setShowAdminMenu(false); // 
+}}
+
+      >
+        {user} ▾
+      </button>
+
+      {showUserMenu && (
+        <div className="cb-menu-panel">
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              setShowHistory((v) => !v);
+              setShowRequests(false);
+              setShowUserMenu(false);
             }}
           >
-            {(showHistory || showRequests) && (
-              <button
-                className="cb-login-btn"
-                onClick={handleBackToBooking}
-              >
-                返回預約
-              </button>
-            )}
+            歷史紀錄
+          </button>
 
-            <button
-              className="cb-login-btn"
-              onClick={() => {
-                setShowHistory((v) => !v);
-                if (showRequests) setShowRequests(false);
-              }}
-            >
-              歷史紀錄
-            </button>
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/profile");
+              setShowUserMenu(false);
+            }}
+          >
+            修改個人資料
+          </button>
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => {
-                  setShowRequests((v) => !v);
-                  if (showHistory) setShowHistory(false);
-                }}
-              >
-                確認租借
-              </button>
-            )}
+          <div className="cb-menu-divider" />
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/editing-classroom")}
-              >
-                編輯教室
-              </button>
-            )}
+          <button
+            className="cb-menu-item danger"
+            onClick={handleLogout}
+          >
+            登出
+          </button>
+        </div>
+      )}
+    </div>
+  ) : (
+    <button
+      className="cb-login-btn"
+      onClick={() => navigate("/login")}
+    >
+      登入
+    </button>
+  )}
 
-            {isAdmin && (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/blacklist")}
-              >
-                黑名單
-              </button>
-            )}
+  {/* ===== 管理員功能（只有 isAdmin 才會看到） ===== */}
+  {isAdmin && (
+    <div className="cb-menu">
+      <button
+        className="cb-login-btn"
+        onClick={() => {
+        setShowAdminMenu((v) => !v);
+        setShowUserMenu(false); 
+}}
 
-            {account ? (
-              <>
-                <button
-                  className="cb-login-btn"
-                  style={{ cursor: "default" }}
-                  disabled
-                >
-                  {user}
-                </button>
+      >
+        管理員功能 ▾
+      </button>
 
-                <button
-                  className="cb-login-btn"
-                  onClick={handleLogout}
-                >
-                  登出
-                </button>
-              </>
-            ) : (
-              <button
-                className="cb-login-btn"
-                onClick={() => navigate("/login")}
-              >
-                登入
-              </button>
-            )}
-          </div>
+      {showAdminMenu && (
+        <div className="cb-menu-panel">
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              setShowRequests((v) => !v);
+              setShowHistory(false);
+              setShowAdminMenu(false);
+            }}
+          >
+            確認租借
+          </button>
+
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/editing-classroom");
+              setShowAdminMenu(false);
+            }}
+          >
+            編輯教室
+          </button>
+
+          <button
+            className="cb-menu-item"
+            onClick={() => {
+              navigate("/blacklist");
+              setShowAdminMenu(false);
+            }}
+          >
+            黑名單
+          </button>
+        </div>
+      )}
+    </div>
+  )}
+</div>
+
         </div>
 
         <div className="cb-card">
@@ -1502,7 +1594,7 @@ export default function ClassroomBooking() {
                   <li>登入系統。</li>
                   <li>從左側選擇大樓。</li>
                   <li>在右側進階搜尋條選擇條件與教室。</li>
-                  <li>點選下方時段並提出租借。</li>
+                  <li>點選下方時段及填寫用途說明並提出租借。</li>
                   <li>等待管理員確認。</li>
                 </ol>
               </div>

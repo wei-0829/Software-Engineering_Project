@@ -1,5 +1,5 @@
 from rest_framework.views import APIView
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.tokens import RefreshToken
@@ -103,6 +103,57 @@ class LoginView(APIView):
             },
             status=status.HTTP_200_OK,
         )
+
+
+class UpdateProfileView(APIView):
+    """
+    PATCH /api/auth/profile/
+    - 更新使用者資訊（目前僅支援修改顯示名稱）
+    - 需登入 (IsAuthenticated)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def patch(self, request):
+        user = request.user
+        new_name = (request.data.get("name") or "").strip()
+
+        if not new_name:
+            return Response({"detail": "名稱不能為空"}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.first_name = new_name
+        user.save()
+
+        return Response({"message": "更新成功", "name": user.first_name}, status=status.HTTP_200_OK)
+
+
+class UpdatePasswordView(APIView):
+    """
+    POST /api/auth/change-password/
+    - 修改密碼（需提供舊密碼）
+    - 需登入 (IsAuthenticated)
+    """
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        current_password = request.data.get("current_password")
+        new_password = request.data.get("new_password")
+
+        if not current_password or not new_password:
+            return Response({"detail": "請提供舊密碼與新密碼"}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not user.check_password(current_password):
+            return Response({"detail": "舊密碼不正確"}, status=status.HTTP_400_BAD_REQUEST)
+
+        try:
+            valid_password(new_password)
+        except ValidationError as e:
+            return Response({"detail": e.message}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(new_password)
+        user.save()
+
+        return Response({"detail": "密碼修改成功"}, status=status.HTTP_200_OK)
 
 
 class RefreshTokenView(APIView):
