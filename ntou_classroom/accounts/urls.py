@@ -5,7 +5,9 @@ from .views import (
     RefreshTokenView,
     SendVerificationView,
     ChangePasswordView,
-    VerifyChangePasswordView
+    VerifyChangePasswordView,
+    UpdateProfileView,
+    UpdatePasswordView,
 )
 
 """
@@ -29,5 +31,7 @@ urlpatterns = [
     path("refresh/", RefreshTokenView.as_view(), name="refresh"),
     path("send_verification_email/", SendVerificationView.as_view(), name="send_verification"),
     path("send_change_pwd/", ChangePasswordView.as_view(), name="change_pwd"),
-    path("verify_change_pwd/",VerifyChangePasswordView.as_view(),name="verify_change_pwd")
+    path("verify_change_pwd/",VerifyChangePasswordView.as_view(),name="verify_change_pwd"),
+    path("change_name/", UpdateProfileView.as_view(), name="update_profile"),
+    path("change_password/", UpdatePasswordView.as_view(), name="update_password"),
 ]

@@ -220,3 +220,59 @@
   z-index: 999;                 /* ★ 確保在最上層，不被其他元素遮住 */
   box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.10);
 }
+/* ===== 右上角選單定位 ===== */
+.cb-hero {
+  position: relative;
+}
+
+.cb-hero-actions {
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+/* ===== 下拉選單樣式 ===== */
+.cb-menu {
+  position: relative;
+}
+
+.cb-menu-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 170px;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  box-shadow: 0 12px 24px rgba(0,0,0,0.18);
+  padding: 6px;
+  z-index: 100;
+}
+
+.cb-menu-item {
+  width: 100%;
+  background: none;
+  border: 0;
+  text-align: left;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cb-menu-item:hover {
+  background: #eef2ff;
+}
+
+.cb-menu-divider {
+  height: 1px;
+  background: #e5e7eb;
+  margin: 6px 0;
+}
+
+.cb-menu-item.danger {
+  color: #dc2626;
+}

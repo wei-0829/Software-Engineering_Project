@@ -307,3 +307,273 @@
   cursor: not-allowed;
   box-shadow: none;
 }
+
+/* ====== 歷史紀錄：文字在左、按鈕在右 ====== */
+
+.cb-history-list .cb-history-item {
+  position: relative;
+  display: flex;                      /* 關鍵：改成左右排列 */
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+
+  /* 覆蓋 cb-list.dashed li 的 padding / 邊線 */
+  padding: 10px 12px 10px 30px;       /* 左側 30px 留給藍點 */
+  margin-bottom: 6px;
+  border-bottom: 1px dashed #cfd4da;
+  list-style: none;
+}
+
+.cb-history-list .cb-history-item::before {
+  /* 保留原本那顆藍色圓點 */
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 15px;
+  width: 10px;
+  height: 10px;
+  background: #2563eb;
+  border-radius: 50%;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.cb-history-main {
+  flex: 1;          /* 讓文字區塊填滿左邊空間 */
+}
+
+.cb-history-actions {
+  flex-shrink: 0;   /* 按鈕寬度固定，不被擠壓 */
+  display: flex;
+  align-items: center;
+}
+
+/* 讓「取消預約」按鈕改成紅色、稍微小一點 */
+.cb-history-cancel-btn {
+  background: #ef4444;
+  box-shadow: 0 8px 18px rgba(220, 38, 38, 0.25);
+  padding: 8px 14px;
+  font-size: 14px;
+}
+
+.cb-history-cancel-btn:hover {
+  background: #dc2626;
+  box-shadow: 0 12px 24px rgba(220, 38, 38, 0.32);
+}
+
+/* 單獨改狀態三個字的顏色 */
+.status-label {
+  font-weight: 800;
+}
+
+/* 已批准 → 藍色 */
+.status-approved {
+  color: #2563eb;
+}
+
+/* 已拒絕 → 紅色 */
+.status-rejected {
+  color: #dc2626;
+}
+
+/* 待審核 → 黑色 */
+.status-pending {
+  color: #111827;
+}
+.cal-wrap{
+  margin-top:8px;
+  display:grid;
+  grid-template-columns: minmax(0,2fr) minmax(0,3fr);
+  gap:16px;
+}
+.cal-left,
+.cal-right{
+  background:#ffffff;
+  border-radius:12px;
+  border:1px solid #e5e7eb;
+  padding:12px 14px;
+}
+.cal-title{
+  font-weight:800;
+  margin-bottom:8px;
+  color:#0f3b8f;
+}
+.cal-date-list{
+  max-height:360px;
+  overflow-y:auto;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+.cal-date-item{
+  text-align:left;
+  border-radius:999px;
+  border:1px solid #e5e7eb;
+  padding:6px 10px;
+  background:#f9fafb;
+  cursor:pointer;
+  font-size:14px;
+}
+.cal-date-item.is-selected{
+  border-color:#2563eb;
+  background:#eaf1ff;
+}
+.cal-time-select{
+  width:100%;
+  padding:8px 10px;
+  border-radius:8px;
+  border:1px solid #e5e7eb;
+  font-size:14px;
+}
+/* ====== DateTimeCalendar：月份月曆 + 時間選擇 ====== */
+.cal-wrap {
+  margin-top: 8px;
+  display: flex;
+  gap: 16px;
+  align-items: stretch;
+}
+
+/* 左邊月曆 */
+.cal-left {
+  flex: 0 0 260px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  padding: 8px 10px 10px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cal-title {
+  font-size: 14px;
+  font-weight: 800;
+  color: #111827;
+  margin-bottom: 6px;
+}
+
+.cal-month-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.cal-month-title {
+  font-weight: 800;
+  color: #111827;
+  font-size: 15px;
+}
+
+.cal-nav-btn {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  border: 0;
+  background: #e5e7eb;
+  color: #111827;
+  cursor: pointer;
+  font-size: 16px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cal-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+.cal-week-row {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  font-size: 11px;
+  text-align: center;
+  color: #6b7280;
+  margin-bottom: 2px;
+}
+
+.cal-weekday {
+  padding: 2px 0;
+}
+
+/* 日期格子 */
+.cal-date-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+}
+
+.cal-date-cell {
+  height: 30px;
+  border-radius: 7px;
+  border: 1px solid transparent;
+  background: #ffffff;
+  font-size: 13px;
+  line-height: 30px;
+  text-align: center;
+  cursor: pointer;
+  color: #111827;
+  transition: background 0.12s ease, border-color 0.12s ease,
+    box-shadow 0.12s ease, color 0.12s ease;
+}
+
+.cal-date-cell:not(.is-disabled):hover {
+  background: #eff6ff;
+  border-color: #bfdbfe;
+}
+
+.cal-date-cell.is-other-month {
+  color: #9ca3af;
+}
+
+.cal-date-cell.is-disabled {
+  color: #cbd5e1;
+  cursor: not-allowed;
+  background: #f9fafb;
+}
+
+.cal-date-cell.is-today {
+  border-color: #60a5fa;
+}
+
+.cal-date-cell.is-selected {
+  background: #2563eb;
+  border-color: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.28);
+}
+
+/* 右邊：時間 + 按鈕 */
+.cal-right {
+  flex: 1;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #ffffff;
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.06);
+  padding: 12px 14px 16px;
+}
+
+.cal-time-select {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #d1d5db;
+  font-size: 14px;
+}
+
+.cal-time-select:focus {
+  outline: none;
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+.cb-hero { position: relative; }
+
+.cb-hero-actions{
+  position: absolute;
+  top: 16px;
+  right: 24px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
