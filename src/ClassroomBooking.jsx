@@ -1126,7 +1126,7 @@ export default function ClassroomBooking() {
 
     return (
       <div className="cb-section">
-        <h2 className="cb-section-title">租借請求管理（僅管理員）</h2>
+        <h2 className="cb-section-title">目前租借請求管理</h2>
         {pendingReservations.length === 0 ? (
           <div className="cb-selection-banner">
             目前沒有任何待處理的請求。
@@ -1391,7 +1391,7 @@ export default function ClassroomBooking() {
             {showRequests
               ? "租借請求管理"
               : showHistory
-              ? "我的教室預約歷史"
+              ? "教室預約歷史"
               : selectedBuilding
               ? "選擇教室與進階搜尋"
               : "教室預約系統說明"}
