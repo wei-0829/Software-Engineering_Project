@@ -116,6 +116,8 @@ DATABASES = {
         "PASSWORD": "AVNS_BHCgAUTb1pAtKnVpf8U",
         "HOST": "mysql-238322ff-softwareengineering11401-9faa.g.aivencloud.com",
         "PORT": "25779",
+        "CONN_MAX_AGE": 60,
+        "CONN_HEALTH_CHECKS": True,
         "OPTIONS": { 
             "charset": "utf8mb4",
         },
