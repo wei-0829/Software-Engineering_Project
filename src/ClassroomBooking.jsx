@@ -543,7 +543,7 @@ export default function ClassroomBooking() {
     inFlight.current.my = true;
     setLoadingMy(true);
     try {
-      const res = await fetchWithAuth(API_ENDPOINTS.reservations());
+      const res = await fetchWithAuth(API_ENDPOINTS.reservations(`${API_ENDPOINTS.reservations()}?limit=200`));
       if (!res.ok) throw new Error("load_my_failed");
       const data = await res.json();
       setMyReservations(data);
@@ -578,7 +578,7 @@ export default function ClassroomBooking() {
     setLoadingAll(true);
     try {
       const res = await fetchWithAuth(
-        `${API_ENDPOINTS.reservations()}?view_all=true`
+        `${API_ENDPOINTS.reservations()}?view_all=true&status=pending&limit=200`
       );
       if (!res.ok) throw new Error("load_all_failed");
       const data = await res.json();
