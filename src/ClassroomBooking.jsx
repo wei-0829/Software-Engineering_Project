@@ -292,9 +292,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 
         <div className="wk-actions" style={{ marginTop: 16 }}>
           <button className="cb-btn" disabled={!selectedDate || !selectedTime} onClick={handleReserveClick}>
-            {selectedDate && selectedTime
-              ? `預約：${room}｜${formatDateLong(selectedDate)}｜${selectedTime}`
-              : "請先選擇日期與時間"}
+            {selectedDate && selectedTime ? `預約：${room}｜${formatDateLong(selectedDate)}｜${selectedTime}` : "請先選擇日期與時間"}
           </button>
         </div>
       </div>
@@ -323,6 +321,10 @@ export default function ClassroomBooking() {
 
   const [showHistory, setShowHistory] = useState(false);
   const [showRequests, setShowRequests] = useState(false);
+
+  // ✅ 新增：避免「空資料一直顯示載入中 / 或載入前先顯示空狀態」
+  const [loadingBuildings, setLoadingBuildings] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(false);
 
   // ✅ 快取 + 預載
   const [allReservations, setAllReservations] = useState([]);
@@ -453,10 +455,11 @@ export default function ClassroomBooking() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [account, isAdmin]);
 
-  // 載入大樓列表
+  // ✅ 載入大樓列表（加入 loadingBuildings）
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
+        setLoadingBuildings(true);
         const res = await fetch(API_ENDPOINTS.buildings());
         if (!res.ok) throw new Error("載入大樓列表失敗");
         const data = await res.json();
@@ -464,20 +467,27 @@ export default function ClassroomBooking() {
       } catch (error) {
         console.error("載入大樓列表失敗:", error);
         alert("載入大樓列表失敗");
+        setBuildings([]);
+      } finally {
+        setLoadingBuildings(false);
       }
     };
     fetchBuildings();
   }, []);
 
-  // 載入教室列表（根據搜尋條件）
+  // ✅ 載入教室列表（根據搜尋條件）（加入 loadingRooms + 防止舊請求覆蓋）
   useEffect(() => {
     if (!selectedBuilding) {
       setClassrooms([]);
       return;
     }
 
+    let alive = true;
+
     const fetchClassrooms = async () => {
       try {
+        setLoadingRooms(true);
+
         const params = new URLSearchParams({ building: selectedBuilding.code });
 
         if (keyword) params.append("search", keyword);
@@ -491,15 +501,25 @@ export default function ClassroomBooking() {
         if (!res.ok) throw new Error("載入教室列表失敗");
         const data = await res.json();
 
+        if (!alive) return;
+
         setClassrooms(data.results || data);
         setSelectedRoom(null);
       } catch (error) {
         console.error("載入教室列表失敗:", error);
         alert("載入教室列表失敗");
+        if (!alive) return;
+        setClassrooms([]);
+      } finally {
+        if (alive) setLoadingRooms(false);
       }
     };
 
     fetchClassrooms();
+
+    return () => {
+      alive = false;
+    };
   }, [selectedBuilding, keyword, minCapacity, needProjector, needWhiteboard, needNetwork, needMic]);
 
   // 載入已預約時段（未來半年）
@@ -1002,23 +1022,27 @@ export default function ClassroomBooking() {
         </div>
 
         <ul className="cb-tree">
-          {filteredBuildings.map((b) => (
-            <li
-              key={b.code}
-              className="cb-tree-item cb-tree-building"
-              onClick={() => {
-                setShowHistory(false);
-                setShowRequests(false);
-                setSelectedBuilding(b);
-                resetFilters();
-              }}
-            >
-              <span className="cb-building-code">{b.code}</span>
-              <span className="cb-building-name">{b.name}</span>
-            </li>
-          ))}
-
-          {filteredBuildings.length === 0 && <li className="cb-tree-empty">找不到符合的教學大樓。</li>}
+          {loadingBuildings ? (
+            <li className="cb-tree-empty">載入中…</li>
+          ) : filteredBuildings.length === 0 ? (
+            <li className="cb-tree-empty">找不到符合的教學大樓。</li>
+          ) : (
+            filteredBuildings.map((b) => (
+              <li
+                key={b.code}
+                className="cb-tree-item cb-tree-building"
+                onClick={() => {
+                  setShowHistory(false);
+                  setShowRequests(false);
+                  setSelectedBuilding(b);
+                  resetFilters();
+                }}
+              >
+                <span className="cb-building-code">{b.code}</span>
+                <span className="cb-building-name">{b.name}</span>
+              </li>
+            ))
+          )}
         </ul>
       </aside>
 
@@ -1209,7 +1233,10 @@ export default function ClassroomBooking() {
 
               <div className="cb-section">
                 <h2 className="cb-section-title">可借用教室</h2>
-                {filteredRooms.length === 0 ? (
+
+                {loadingRooms ? (
+                  <div className="cb-selection-banner">載入中…</div>
+                ) : filteredRooms.length === 0 ? (
                   <div className="cb-selection-banner">找不到符合條件的教室，請調整搜尋條件。</div>
                 ) : (
                   <div className="cb-room-grid">
