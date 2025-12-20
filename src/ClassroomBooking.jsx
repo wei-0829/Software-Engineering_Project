@@ -589,6 +589,12 @@ export default function ClassroomBooking() {
     setSelectedBuilding(null);
     setSelectedRoom(null);
     setClassrooms([]);
+
+    // ✅ 登出後跳提示
+    alert("已成功登出");
+
+    // ✅（可選）導回登入頁，避免留在同頁誤操作
+    navigate("/login");
   };
 
   const filteredRooms = useMemo(() => classrooms, [classrooms]);

@@ -137,7 +137,7 @@ export default function Login() {
     const account = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
     if (!account) {
-      alert("請先輸入姓名與學校帳號");
+      alert("請先輸入使用者名稱與學校帳號");
       setSendOtpCode(false);
       return;
     }
@@ -175,7 +175,7 @@ export default function Login() {
     const account = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
     if (!account) {
-      alert("請先輸入姓名與學校帳號");
+      alert("請先輸入使用者名稱與學校帳號");
       setSendOtpCode(false);
       return;
     }
@@ -319,13 +319,13 @@ export default function Login() {
                 <h2 className="login-title">註冊新帳號</h2>
 
                 <form className="login-form" onSubmit={onSubmitRegister}>
-                  <label className="login-label">姓名</label>
+                  <label className="login-label">使用者名稱</label>
                   <input
                     className="login-input"
                     type="text"
                     name="name"
                     ref={registerNameRef}
-                    placeholder="請輸入姓名"
+                    placeholder="請輸入使用者名稱"
                     required
                   />
 

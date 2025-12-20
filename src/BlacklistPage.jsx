@@ -179,7 +179,7 @@ export default function Blacklist() {
                     <table className="cb-table bl-table">
                       <thead>
                         <tr>
-                          <th>姓名</th>
+                          <th>使用者名稱</th>
                           <th>學號 / 帳號</th>
                           <th>信箱</th>
                           <th>操作</th>
@@ -229,7 +229,7 @@ export default function Blacklist() {
                     <table className="cb-table bl-table">
                       <thead>
                         <tr>
-                          <th>姓名</th>
+                          <th>使用者名稱</th>
                           <th>學號 / 帳號</th>
                           <th>信箱</th>
                           <th>操作</th>
