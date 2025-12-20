@@ -86,6 +86,9 @@ export default function Login() {
       localStorage.setItem("name", data.user.name);
       localStorage.setItem("username", account);
 
+      // ✅ 登入成功彈窗
+      alert("登入成功！");
+
       navigate("/");
     } catch (err) {
       console.error(err);
