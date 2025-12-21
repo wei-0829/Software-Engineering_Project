@@ -153,7 +153,7 @@ export default function Blacklist() {
         <div className="cb-hero">
           <div style={{ display: "flex", gap: 10, marginLeft: "auto", alignItems: "center" }}>
             <button className="cb-login-btn" onClick={() => navigate("/")}>
-              回到預約畫面
+              返回主頁
             </button>
           </div>
         </div>

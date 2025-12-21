@@ -271,7 +271,7 @@ export default function EditingClassroom() {
             }}
           >
             <button className="cb-login-btn" onClick={() => navigate("/")}>
-              回到預約畫面
+              返回主頁
             </button>
           </div>
         </div>

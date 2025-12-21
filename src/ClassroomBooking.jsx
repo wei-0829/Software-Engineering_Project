@@ -302,7 +302,18 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 
 export default function ClassroomBooking() {
   const navigate = useNavigate();
-
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  useEffect(() => {
+    if (sidebarOpen) {
+      // Sidebar 打開：鎖住背景捲動
+     document.body.style.overflow = "hidden";
+    } else {
+     document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [sidebarOpen]);
   const [buildings, setBuildings] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
@@ -988,7 +999,14 @@ export default function ClassroomBooking() {
 
   return (
     <div className="cb-root">
-      <aside className="cb-sidebar">
+      {sidebarOpen && (
+        <div
+          className="cb-overlay"
+          onClick={() => setSidebarOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+      <aside className={"cb-sidebar" + (sidebarOpen ? " is-open" : "")}>
         <div className="cb-brand">
           <div className="cb-brand-top">
             <div className="cb-logo" />
@@ -1042,6 +1060,7 @@ export default function ClassroomBooking() {
                   setShowRequests(false);
                   setSelectedBuilding(b);
                   resetFilters();
+                   setSidebarOpen(false);
                 }}
               >
                 <span className="cb-building-code">{b.code}</span>
@@ -1055,9 +1074,18 @@ export default function ClassroomBooking() {
       <section className="cb-main">
         <div className="cb-hero">
           <div className="cb-hero-actions">
+            {/*  漢堡選單（手機） */}
+            <button
+            type="button"
+            className="cb-login-btn cb-hamburger"
+            onClick={() => setSidebarOpen(true)}
+            aria-label="開啟側邊選單"
+            >
+      ☰
+    </button>
             {(showHistory || showRequests) && (
               <button className="cb-login-btn" onClick={handleBackToBooking}>
-                返回預約
+                返回主頁
               </button>
             )}
 
