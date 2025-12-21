@@ -577,3 +577,82 @@
   gap: 10px;
   align-items: center;
 }
+@media (max-width: 1024px) {
+  .cb-root {
+    flex-direction: column;
+  }
+
+  .cb-sidebar {
+    width: 100%;
+    border-right: none;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .cb-tree {
+    height: auto;
+    max-height: 260px;
+  }
+}
+@media (max-width: 768px) {
+  .cal-wrap {
+    flex-direction: column;
+  }
+
+  .cal-left {
+    flex: none;
+    width: 100%;
+  }
+}
+/* 漢堡按鈕：桌機隱藏 */
+.cb-hamburger {
+  display: none;
+}
+
+/* 手機版 */
+@media (max-width: 768px) {
+  /* 漢堡按鈕出現 */
+  .cb-hamburger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Sidebar 變成左側抽屜 */
+  .cb-sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100vh;
+    width: min(86vw, 360px);
+    z-index: 1001;
+
+    /* 一開始藏在左邊 */
+    transform: translateX(-105%);
+    transition: transform 0.22s ease;
+
+    /* 內容可滾動 */
+    overflow-y: auto;
+  }
+
+  /* sidebar 打開 */
+  .cb-sidebar.is-open {
+    transform: translateX(0);
+  }
+
+
+  .cb-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(2px);
+    z-index: 1000;
+  }
+
+  .cb-root {
+    display: block;
+  }
+
+  .cb-main {
+    width: 100%;
+  }
+}
