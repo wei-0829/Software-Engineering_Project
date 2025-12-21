@@ -165,11 +165,165 @@
   font-size: 13px;
 }
 
+/* =========================
+   Responsive: ProfilePage
+   ========================= */
+
+/* 讓 cb-card 在小螢幕不要太擠（如果你 cb-card 本身有固定寬度/邊距） */
+.cb-main {
+  width: 100%;
+}
+
+/* 讓 profile-row 更像卡片列表：小螢幕 padding 降低 */
 @media (max-width: 900px) {
   .profile-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr; /* 你原本有，保留 */
+    padding: 14px 14px;
+    gap: 10px;
   }
+
+  .profile-label {
+    font-size: 14px;
+  }
+
+  .profile-text {
+    font-size: 15px;
+  }
+
+  /* ✅ actions 不要 space-between，改成自然換行 */
+  .profile-actions {
+    justify-content: flex-start;
+    gap: 10px;
+  }
+
+  /* ✅ input 在小螢幕更好用 */
+  .profile-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  /* ✅ 密碼區本來三欄，改一欄（你原本有，保留） */
   .pwd-grid {
     grid-template-columns: 1fr;
+  }
+
+  .pwd-panel {
+    padding: 14px;
+  }
+
+  /* 按鈕不要硬擠右邊 */
+  .pwd-actions {
+    justify-content: flex-start;
+  }
+}
+
+/* 手機：把按鈕變大、排列更直覺 */
+@media (max-width: 600px) {
+  .profile-grid {
+    border-radius: 16px;
+  }
+
+  .profile-row {
+    padding: 12px 12px;
+  }
+
+  .profile-value {
+    align-items: flex-start;
+  }
+
+  /* ✅ 文字 + 按鈕改成垂直堆疊更清楚 */
+  .profile-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  /* ✅ 修改/儲存/取消按鈕全寬，手機更好按 */
+  .profile-btn,
+  .pwd-actions .cb-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 14px;
+    border-radius: 12px; /* 手機比 999px 更穩定 */
+  }
+
+  /* ✅ 帳號不可修改提示換行，不要跟帳號擠在一起 */
+  .profile-hint {
+    width: 100%;
+  }
+
+  .pwd-title {
+    font-size: 16px;
+  }
+
+  .pwd-input {
+    font-size: 16px; /* iOS 避免縮放 */
+  }
+
+  /* ✅ 底部 note 字體稍小 */
+  .pwd-note {
+    font-size: 12px;
+  }
+}
+
+/* 超小手機：進一步縮 padding */
+@media (max-width: 420px) {
+  .profile-row {
+    padding: 10px 10px;
+  }
+
+  .pwd-panel {
+    padding: 12px;
+  }
+
+  .profile-text {
+    font-size: 14px;
+  }
+
+  .profile-label {
+    font-size: 13px;
+  }
+}
+
+/* ===== 底部 Banner 不要擋內容 ===== */
+
+/* 先定義 footer 高度（之後好維護） */
+:root {
+  --profile-footer-h: 64px;
+}
+
+/* Footer 固定在底部 */
+.editing-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+
+  height: var(--profile-footer-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* 如果你原本有漸層/顏色可以留著 */
+  background: linear-gradient(180deg, #39a3ff 0%, #29b0ff 40%, #27b9ff 65%, #2fc0ff 100%);
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+
+  /* ✅ iPhone 安全區避免被 Home Bar 擋 */
+  padding-bottom: env(safe-area-inset-bottom);
+
+  z-index: 50;
+}
+
+/* ✅ 重點：內容預留 footer 高度，避免被蓋住 */
+.cb-main {
+  padding-bottom: calc(var(--profile-footer-h) + env(safe-area-inset-bottom) + 16px);
+}
+
+/* 手機再加一點點底部間距更舒服 */
+@media (max-width: 600px) {
+  .cb-main {
+    padding-bottom: calc(var(--profile-footer-h) + env(safe-area-inset-bottom) + 24px);
   }
 }

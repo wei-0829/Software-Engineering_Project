@@ -3,6 +3,10 @@
 
 /* ============ 版面 ============ */
 .cb-root{ display:flex; min-height:100vh; }
+@supports (height: 100dvh) {
+  .cb-root { min-height: 100dvh; }
+  .cb-tree { height: calc(100dvh - 180px); }
+}
 
 /* -------- 側欄（品牌區＋清單） -------- */
 .cb-sidebar{
@@ -78,7 +82,7 @@
   display:flex; align-items:start; justify-content:end; padding:16px 24px; color:#fff;
 }
 .cb-hero::after{
-  content:""; position:absolute; left:0; right:0; bottom:-1px; height:80px;
+  content:""; position:absolute; left:0; right:0; bottom:0px; height:80px;
   background: url("data:image/svg+xml,%3Csvg width='1440' height='80' viewBox='0 0 1440 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 40c160 30 320 30 480 0s320-30 480 0 320 30 480 0v40H0V40Z' fill='%23ffffff' fill-opacity='1'/%3E%3C/svg%3E") no-repeat center/cover;
   pointer-events:none;
 }
@@ -577,6 +581,7 @@
   gap: 10px;
   align-items: center;
 }
+
 @media (max-width: 1024px) {
   .cb-root {
     flex-direction: column;
@@ -593,6 +598,7 @@
     max-height: 260px;
   }
 }
+
 @media (max-width: 768px) {
   .cal-wrap {
     flex-direction: column;
@@ -603,6 +609,7 @@
     width: 100%;
   }
 }
+
 /* 漢堡按鈕：桌機隱藏 */
 .cb-hamburger {
   display: none;

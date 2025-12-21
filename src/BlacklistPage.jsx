@@ -208,11 +208,6 @@ export default function Blacklist() {
                 )}
               </div>
 
-              <div className="bl-arrows">
-                <div className="bl-arrow-icon bl-arrow-red">⇨</div>
-                <div className="bl-arrow-icon bl-arrow-green">⇦</div>
-              </div>
-
               {/* 右：黑名單 */}
               <div className="bl-column">
                 <div className="bl-column-header">
