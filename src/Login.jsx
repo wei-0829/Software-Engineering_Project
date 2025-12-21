@@ -295,7 +295,7 @@ export default function Login() {
                   />
 
                   {/* ✅ reCAPTCHA */}
-                  <div style={{ marginTop: 8, marginBottom: 8 }}>
+                  <div className="login-captcha-wrap">
                     <ReCAPTCHA
                       ref={recaptchaRef}
                       sitekey={import.meta.env.VITE_RECAPTCHA_SITE_KEY}

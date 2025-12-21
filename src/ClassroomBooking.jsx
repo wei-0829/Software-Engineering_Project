@@ -369,26 +369,45 @@ export default function ClassroomBooking() {
     return [];
   };
 
-  // ✅ 統一帶 auth 的 fetch（含 token refresh）
+  // ✅ 統一帶 auth 的 fetch（含 token refresh + 重打原請求）
   const fetchWithAuth = async (url, options = {}) => {
-    let token = localStorage.getItem("access_token");
-    if (!token) throw new Error("no_token");
+    const ACCESS_KEY = "access_token";
 
-    const doReq = (t) =>
+    const doReq = (token) =>
       fetch(url, {
         ...options,
         headers: {
           ...(options.headers || {}),
-          Authorization: `Bearer ${t}`,
+          Authorization: `Bearer ${token}`,
+          ...(options.body ? { "Content-Type": "application/json" } : {}),
         },
       });
+
+    let token = localStorage.getItem(ACCESS_KEY);
+    if (!token) throw new Error("no_token");
 
     let res = await doReq(token);
 
     if (res.status === 401) {
-      const newToken = await refreshAccessToken();
-      if (!newToken) throw new Error("auth_expired");
-      res = await doReq(newToken);
+      // 讀取 401 的 body 判斷是不是 token expired / not valid
+      const body = await res.clone().json().catch(() => null);
+
+      const isTokenInvalid =
+        body?.code === "token_not_valid" ||
+        String(body?.detail || "").toLowerCase().includes("token");
+
+      if (isTokenInvalid) {
+        const newToken = await refreshAccessToken();
+
+        // 重要：refreshAccessToken() 必須回傳「新的 access token 字串」
+        if (!newToken) throw new Error("auth_expired");
+
+        // ✅ 回存新 token，避免下一次還拿舊的
+        localStorage.setItem(ACCESS_KEY, newToken);
+
+        // ✅ 重打原請求
+        res = await doReq(newToken);
+      }
     }
 
     return res;
@@ -617,7 +636,8 @@ export default function ClassroomBooking() {
 
   /** 預約事件：打後端 /api/reservations/ */
   const handleReserve = async ({ room, date, start, end, reason }) => {
-    let token = localStorage.getItem("access_token");
+    // 沒 token 直接導回登入
+    const token = localStorage.getItem("access_token");
     if (!token) {
       alert("請先登入後再預約");
       navigate("/login");
@@ -633,33 +653,14 @@ export default function ClassroomBooking() {
       reason: reason || "",
     };
 
-    const makeRequest = async (accessToken) =>
-      fetch(API_ENDPOINTS.reservations(), {
+    try {
+      // ✅ 改成走 fetchWithAuth（會自動 refresh + 重打）
+      const res = await fetchWithAuth(API_ENDPOINTS.reservations(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${accessToken}`,
-        },
         body: JSON.stringify(payload),
       });
 
-    try {
-      let res = await makeRequest(token);
-      let data = await res.json().catch(() => ({}));
-
-      if (res.status === 401 && data.code === "token_not_valid") {
-        const newToken = await refreshAccessToken();
-        if (newToken) {
-          token = newToken;
-          res = await makeRequest(token);
-          data = await res.json().catch(() => ({}));
-        } else {
-          alert("登入已過期，請重新登入");
-          logout();
-          navigate("/login");
-          return;
-        }
-      }
+      const data = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         if (data.detail) alert("預約失敗：" + data.detail);
@@ -728,6 +729,15 @@ export default function ClassroomBooking() {
       if (isAdmin) loadAllReservations({ force: true });
     } catch (err) {
       console.error(err);
+
+      // ✅ fetchWithAuth 丟 auth_expired 的話：登出並導回登入
+      if (String(err?.message) === "auth_expired") {
+        alert("登入已過期，請重新登入");
+        logout();
+        navigate("/login");
+        return;
+      }
+
       alert("預約失敗：無法連線到伺服器");
     }
   };
@@ -738,32 +748,12 @@ export default function ClassroomBooking() {
     if (!window.confirm(`確定要取消 ${classroom} ${date} ${time_slot} 的預約嗎？`)) return;
 
     try {
-      let token = localStorage.getItem("access_token");
-
-      const doRequest = async (accessToken) =>
-        fetch(API_ENDPOINTS.cancelReservation(reservation.id), {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${accessToken}`,
-          },
-        });
-
-      let res = await doRequest(token);
-
-      if (res.status === 401) {
-        const newToken = await refreshAccessToken();
-        if (!newToken) {
-          alert("登入已過期，請重新登入");
-          logout();
-          return;
-        }
-        res = await doRequest(newToken);
-      }
+      const res = await fetchWithAuth(API_ENDPOINTS.cancelReservation(reservation.id), {
+        method: "DELETE",
+      });
 
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
-        console.error("取消預約失敗：", res.status, errBody);
         throw new Error(errBody.detail || errBody.error || "取消預約失敗");
       }
 
@@ -775,6 +765,12 @@ export default function ClassroomBooking() {
       if (isAdmin) loadAllReservations({ force: true });
     } catch (error) {
       console.error("取消預約失敗:", error);
+      if (String(error?.message) === "auth_expired") {
+        alert("登入已過期，請重新登入");
+        logout();
+        navigate("/login");
+        return;
+      }
       alert(error.message || "取消預約失敗");
     }
   };
@@ -914,18 +910,15 @@ export default function ClassroomBooking() {
 
     const handleReviewReservation = async (reservationId, newStatus) => {
       try {
-        const token = localStorage.getItem("access_token");
-        const res = await fetch(API_ENDPOINTS.updateReservationStatus(reservationId), {
+        const res = await fetchWithAuth(API_ENDPOINTS.updateReservationStatus(reservationId), {
           method: "PATCH",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
           body: JSON.stringify({ status: newStatus }),
         });
 
-        if (res.status === 401) {
-          await refreshAccessToken();
-          return;
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          throw new Error(err.detail || "更新預約狀態失敗");
         }
-        if (!res.ok) throw new Error("更新預約狀態失敗");
 
         setAllReservations((prev) => prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r)));
         setMyReservations((prev) => prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r)));
@@ -933,7 +926,13 @@ export default function ClassroomBooking() {
         alert(`預約已${newStatus === "approved" ? "批准" : "拒絕"}`);
       } catch (error) {
         console.error("更新預約狀態失敗:", error);
-        alert("更新預約狀態失敗");
+        if (String(error?.message) === "auth_expired") {
+          alert("登入已過期，請重新登入");
+          logout();
+          navigate("/login");
+          return;
+        }
+        alert(error.message || "更新預約狀態失敗");
       }
     };
 

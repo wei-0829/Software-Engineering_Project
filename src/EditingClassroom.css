@@ -276,3 +276,198 @@
 .cb-menu-item.danger {
   color: #dc2626;
 }
+
+/* =========================
+   EditingClassroom Responsive
+   ========================= */
+
+/* 1) Footer 固定但不擋內容（超重要） */
+:root {
+  --editing-footer-h: 60px;
+}
+
+/* 你原本 footer 已 fixed，這裡補安全區 & 置中更合理 */
+.editing-footer {
+  height: var(--editing-footer-h);
+  padding-bottom: env(safe-area-inset-bottom);
+  justify-content: center;   /* 你原本靠左，手機會更擠；桌機也更乾淨 */
+  padding-left: 0;
+}
+
+/* ✅ 內容預留 footer 高度，避免最後一段被蓋住 */
+.cb-main {
+  padding-bottom: calc(var(--editing-footer-h) + env(safe-area-inset-bottom) + 16px);
+}
+
+/* 2) 表格容器：小螢幕允許橫向捲動（保底方案） */
+.cb-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 3) 平板：縮字、縮 padding */
+@media (max-width: 1024px) {
+  .cb-card {
+    width: min(960px, 100%);
+  }
+
+  .cb-table {
+    font-size: 16px;
+  }
+
+  .cb-table th,
+  .cb-table td {
+    padding: 14px 14px;
+  }
+
+  .cb-input-inline {
+    width: 96px;
+  }
+
+  .cb-equip-cell {
+    gap: 6px 14px;
+  }
+}
+
+/* 4) 手機：表格改「卡片式」呈現（避免爆版最有效） */
+@media (max-width: 768px) {
+  /* 表格區改成 card list */
+  .cb-table-wrap {
+    overflow: visible; /* 由卡片呈現，不需要橫捲 */
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  .cb-table,
+  .cb-table thead,
+  .cb-table tbody,
+  .cb-table th,
+  .cb-table td,
+  .cb-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  /* 隱藏表頭 */
+  .cb-table thead {
+    display: none;
+  }
+
+  /* 每列變一張卡 */
+  .cb-table tbody tr {
+    background: #fff;
+    border: 1px solid #e6eefc;
+    border-radius: 16px;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+    padding: 12px 12px;
+    margin: 12px 0;
+  }
+
+  /* 取消原本 row border */
+  .cb-table td {
+    border-bottom: 0;
+    padding: 10px 8px;
+    font-size: 15px;
+  }
+
+  /* 每格加上標籤 */
+  .cb-table td:nth-child(1)::before {
+    content: "大樓代碼";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .cb-table td:nth-child(2)::before {
+    content: "教室代碼";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .cb-table td:nth-child(3)::before {
+    content: "可容納人數";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .cb-table td:nth-child(4)::before {
+    content: "設備";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .cb-table td:nth-child(5)::before {
+    content: "操作";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  /* 人數 input 變滿版比較好按 */
+  .cb-input-inline {
+    width: 100%;
+    text-align: left;
+  }
+
+  /* 設備改成一欄一個，避免擠 */
+  .cb-equip-cell {
+    grid-template-columns: 1fr;
+    gap: 10px;
+    font-size: 15px;
+  }
+
+  /* 操作按鈕改成一行兩顆，或自動換行 */
+  .cb-table td:last-child {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+
+  .cb-table .cb-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 14px;
+    font-size: 15px;
+  }
+
+  /* 新增教室：4欄 → 2欄（你原本就有，這裡補更舒服 spacing） */
+  .add-form-grid {
+    grid-template-columns: 1fr 1fr;
+    padding: 16px;
+    gap: 16px;
+  }
+
+  .form-actions {
+    justify-content: stretch;
+  }
+
+  .form-actions .cb-btn {
+    width: 100%;
+  }
+}
+
+/* 5) 超小手機：表單 1 欄 */
+@media (max-width: 420px) {
+  .add-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cb-card-title {
+    font-size: 22px;
+  }
+}

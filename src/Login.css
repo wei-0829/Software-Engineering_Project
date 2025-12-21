@@ -5,114 +5,227 @@
   display: flex;
   flex-direction: column;
 }
+
 .login-topbar {
   height: 64px;
   background: linear-gradient(180deg, #39a3ff 0%, #29b0ff 40%, #27b9ff 65%, #2fc0ff 100%);
   color: #fff;
   padding: 0 24px;
-  display: flex; align-items: center; justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   font-weight: 800;
 }
-.login-brand { 
-  font-size: 30px;
-  letter-spacing: .5px; 
+
+.login-brand {
+  font-size: clamp(18px, 3vw, 30px);
+  letter-spacing: 0.5px;
+  line-height: 1.1;
 }
 
-.login-container { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+/* 內容容器：中間置中 + 有邊距 */
+.login-container {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
 
+/* Panel：核心響應式寬度設定 */
 .login-panel {
   background: #fff;
   border: 1px solid #e5e7eb;
   border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0,0,0,.08);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.08);
   padding: 16px;
+
   display: grid;
-  grid-template-columns: 1.2fr .8fr;
+  grid-template-columns: 1.2fr 0.8fr;
   gap: 16px;
-  width: 40%;
+
+  /* ✅ 不要用 width:40%（手機會爆、桌機會太窄）
+     改成：最大寬度 + 自動縮放 */
+  width: min(920px, 92vw);
   margin: 0 auto;
 }
 
-.login-left { padding: 8px 12px 16px; }
-.login-title { margin: 4px 0 12px; font-size: 20px; font-weight: 800; }
-.login-form { display: flex; flex-direction: column; gap: 10px; }
-.login-label { font-weight: 700; }
+.login-left {
+  padding: 8px 12px 16px;
+}
+
+.login-title {
+  margin: 4px 0 12px;
+  font-size: 20px;
+  font-weight: 800;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.login-label {
+  font-weight: 700;
+}
+
 .login-input {
   padding: 10px 12px;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 15px;
   outline: none;
-}
-.login-input:focus { box-shadow: 0 0 0 3px rgba(59,130,246,.25); border-color: #60a5fa; }
-
-.login-captcha {
-  height: 78px;
-  border: 1px dashed #9ca3af;
-  border-radius: 8px;
-  color: #6b7280;
-  display: flex; align-items: center; justify-content: center;
-  background: #f9fafb;
+  width: 100%;
+  box-sizing: border-box;
 }
 
+.login-input:focus {
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25);
+  border-color: #60a5fa;
+}
+
+/* ✅ reCAPTCHA：預設桌機正常，手機會縮放 */
+.login-captcha-wrap {
+  margin-top: 8px;
+  margin-bottom: 8px;
+  width: 100%;
+  overflow: hidden; /* 防止溢出 */
+}
+
+/* 右側選單 */
 .login-right {
   border-left: 1px solid #e5e7eb;
   padding: 8px 12px 16px 18px;
-
-  /* 新增這些 */
   display: flex;
   flex-direction: column;
   gap: 10px;
-  justify-content: center;  /* 垂直置中 */
+  justify-content: center;
 }
+
+/* ✅ login-link 統一只留這一份（你原本重複了） */
 .login-link {
   display: block;
   padding: 10px 12px;
   border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  text-decoration: none;
-  color: #111827;
-  background: #fafafa;
-
-  font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  font-size: 16px;
-  font-weight: 600;
-  color: #111827;
-}
-.login-link:hover { background: #f3f4f6; }
-
-.login-notes {
-  font-size: 20px;
-  width: 40%;
-  margin: 0 auto;
-  background: #fff;
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  padding: 12px 16px;
-  color: #374151;
-}
-.login-notes ol {
-  margin: 0;                 /* 把預設的外距拿掉 */
-  padding-left: 1.5rem;      /* 自己決定縮排多少 */
-  list-style-position: inside; /* 讓 1. 2. 3. 在框框裡面 */
-}
-/* 右側選單：button 也用連結外觀，但不跳頁 */
-.login-link {
-  display: block;
-  padding: 10px 12px;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
+  border-radius: 10px;
   background: #fafafa;
   color: #111827;
   text-align: center;
-  cursor: pointer;         /* 重要：滑鼠為可點狀態 */
+
+  cursor: pointer;
+  user-select: none;
+
+  font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: 16px;
+  font-weight: 650;
+
+  transition: transform 0.08s ease, background 0.15s ease;
 }
 
 .login-link:hover {
   background: #f3f4f6;
 }
 
+.login-link:active {
+  transform: scale(0.98);
+}
+
 /* 讓 a.login-link 維持同外觀 */
 a.login-link {
   text-decoration: none;
+}
+
+/* Notes：跟 panel 同寬 */
+.login-notes {
+  font-size: 16px;
+  width: min(920px, 92vw);
+  margin: 0 auto;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 12px 16px;
+  color: #374151;
+}
+
+.login-notes ol {
+  margin: 0;
+  padding-left: 1.2rem;
+  list-style-position: inside;
+  line-height: 1.6;
+}
+
+/* =========================
+   ✅ Responsive Breakpoints
+   ========================= */
+
+/* 平板以下：稍微縮字、增加容器利用率 */
+@media (max-width: 900px) {
+  .login-topbar {
+    padding: 0 16px;
+  }
+  .login-panel {
+    width: min(720px, 94vw);
+  }
+  .login-notes {
+    width: min(720px, 94vw);
+    font-size: 15px;
+  }
+  .login-link {
+    font-size: 15px;
+  }
+}
+
+/* 手機：改成上下排列 + 右側變成「一排」選單 */
+@media (max-width: 600px) {
+  .login-container {
+    padding: 14px;
+  }
+
+  .login-panel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 14px;
+    width: 96vw;
+  }
+
+  .login-right {
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 12px 0 0;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  /* 三個按鈕平均 */
+  .login-link {
+    flex: 1;
+    padding: 10px 8px;
+    font-size: 14px;
+    border-radius: 10px;
+  }
+
+  .login-title {
+    font-size: 18px;
+  }
+
+  .login-notes {
+    width: 96vw;
+    font-size: 14px;
+  }
+
+  /* ✅ reCAPTCHA 手機縮放：避免爆版 */
+  .login-captcha-wrap > div {
+    transform: scale(0.88);
+    transform-origin: left top;
+  }
+}
+
+/* 超小手機：更縮一點 captcha */
+@media (max-width: 380px) {
+  .login-captcha-wrap > div {
+    transform: scale(0.82);
+  }
 }

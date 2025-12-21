@@ -111,40 +111,6 @@
   box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.1);
 }
 
-/* ====== 中間箭頭區：永遠固定在中間，不會被擠下去 ====== */
-
-.bl-arrows {
-  flex: 0 0 90px;     /* 固定寬度，不會被壓縮 */
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-
-  gap: 20px;
-  padding: 20px 0;
-  opacity: 0.8;
-}
-
-.bl-arrow-icon {
-  font-size: 42px;
-  font-weight: 800;
-  color: #2563eb;
-
-  background: white;
-  padding: 14px 22px;
-  border-radius: 16px;
-  box-shadow: 0 6px 16px rgba(15, 23, 42, 0.18);
-  border: 1px solid #e0e8fa;
-
-  transition: transform 0.15s ease, opacity 0.2s ease;
-  cursor: pointer;
-}
-
-.bl-arrow-icon:hover {
-  opacity: 1;
-  transform: translateY(-2px);
-}
-
 /* ====== 手機版：改成垂直堆疊 ====== */
 
 @media (max-width: 900px) {
@@ -199,4 +165,255 @@
 }
 .cb-table-wrap {
   overflow-x: auto;
+}
+
+/* =========================
+   Blacklist Responsive + Footer safe
+   ========================= */
+
+:root {
+  --bl-footer-h: 60px; /* 跟你其他頁一致 */
+}
+
+/* footer 固定 + safe area */
+.blacklist-footer {
+  position: fixed;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: var(--bl-footer-h);
+  padding-bottom: env(safe-area-inset-bottom);
+
+  background: linear-gradient(to bottom, #3dc9ff 0%, #1ca2ff 40%, #0787ff 100%);
+  color: #fff;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  font-size: 26px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center; /* 手機比較不擠；桌機也很乾淨 */
+  z-index: 999;
+  box-shadow: 0 -4px 18px rgba(0, 0, 0, 0.10);
+}
+
+/* ✅ 預留 footer 空間，避免被蓋住 */
+.cb-main {
+  padding-bottom: calc(var(--bl-footer-h) + env(safe-area-inset-bottom) + 16px);
+}
+
+/* 主卡片（可選，讓版面更一致） */
+.bl-main-card {
+  margin-bottom: 28px;
+}
+
+/* ===== 桌機：雙欄版面 ===== */
+.bl-columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.bl-column {
+  min-width: 0;
+}
+
+.bl-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.bl-count-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: rgba(37, 99, 235, 0.10);
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.bl-count-badge-danger {
+  background: rgba(220, 38, 38, 0.10);
+  color: #b91c1c;
+  border: 1px solid rgba(220, 38, 38, 0.25);
+}
+
+.bl-arrow-icon {
+  width: 46px;
+  height: 46px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 900;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.12);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  font-size: 20px;
+}
+
+.bl-arrow-red { color: #dc2626; }
+.bl-arrow-green { color: #16a34a; }
+
+/* 表格 wrap：允許橫向捲動（保底） */
+.bl-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 表格更緊湊一點（黑名單表格比較多列） */
+.bl-table.cb-table th,
+.bl-table.cb-table td {
+  font-size: 16px;
+  padding: 14px 14px;
+}
+
+/* 按鈕顏色 */
+.bl-btn-block {
+  background: #dc2626;
+  box-shadow: 0 10px 20px rgba(220, 38, 38, 0.22);
+}
+.bl-btn-block:hover { background: #b91c1c; }
+
+.bl-btn-restore {
+  background: #16a34a;
+  box-shadow: 0 10px 20px rgba(22, 163, 74, 0.22);
+}
+.bl-btn-restore:hover { background: #15803d; }
+
+.bl-empty {
+  margin-top: 8px;
+}
+
+/* ===== 平板：改成上下兩區（箭頭隱藏） ===== */
+@media (max-width: 1600px) {
+  .bl-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .bl-arrows {
+    display: none;
+  }
+
+  .bl-table.cb-table th,
+  .bl-table.cb-table td {
+    font-size: 15px;
+    padding: 12px 12px;
+  }
+}
+
+/* ===== 手機：表格變卡片（最重要） ===== */
+@media (max-width: 768px) {
+  /* 卡片寬度更滿 */
+  .cb-card {
+    width: min(980px, 94%);
+    padding: 20px 18px;
+  }
+
+  /* 表格容器改成不橫捲（因為改卡片） */
+  .bl-table-wrap {
+    overflow: visible;
+  }
+
+  /* 表格 -> 卡片列表 */
+  .bl-table,
+  .bl-table thead,
+  .bl-table tbody,
+  .bl-table th,
+  .bl-table td,
+  .bl-table tr {
+    display: block;
+    width: 100%;
+  }
+
+  .bl-table thead {
+    display: none;
+  }
+
+  .bl-table tbody tr {
+    border: 1px solid #e6eefc;
+    border-radius: 16px;
+    background: #fff;
+    box-shadow: 0 10px 22px rgba(15, 23, 42, 0.10);
+    padding: 12px 12px;
+    margin: 12px 0;
+  }
+
+  .bl-table td {
+    border-bottom: 0;
+    padding: 10px 8px;
+    font-size: 15px;
+  }
+
+  /* 每格加 label（對應你 4 欄） */
+  .bl-table td:nth-child(1)::before {
+    content: "使用者名稱";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .bl-table td:nth-child(2)::before {
+    content: "學號 / 帳號";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .bl-table td:nth-child(3)::before {
+    content: "信箱";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+  .bl-table td:nth-child(4)::before {
+    content: "操作";
+    display: block;
+    font-weight: 900;
+    color: #6b7280;
+    margin-bottom: 6px;
+    font-size: 12px;
+    letter-spacing: 0.08em;
+  }
+
+  /* 操作按鈕滿版好按 */
+  .bl-table td:last-child .cb-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 12px 14px;
+    font-size: 15px;
+    border-radius: 12px;
+  }
+
+  /* footer 字太大，手機縮一點 */
+  .blacklist-footer {
+    font-size: 20px;
+    height: 56px;
+  }
+
+  .cb-main {
+    padding-bottom: calc(56px + env(safe-area-inset-bottom) + 14px);
+  }
+}
+
+/* 超小手機：再縮 title */
+@media (max-width: 420px) {
+  .cb-card-title {
+    font-size: 26px;
+  }
 }
