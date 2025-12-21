@@ -1,5 +1,5 @@
 // ClassroomBooking.jsx
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./ClassroomBooking.css";
@@ -38,110 +38,19 @@ function getWeekEnd() {
 
 // 保留舊的 ROOM_META 作為備用（未來可移除）
 const ROOM_META = {
-  INS201: {
-    name: "資工系電腦教室",
-    capacity: 40,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  INS202: {
-    name: "資工系普通教室",
-    capacity: 30,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  INS301: {
-    name: "專題討論室",
-    capacity: 20,
-    projector: false,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  INS302: {
-    name: "會議教室",
-    capacity: 25,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: true,
-  },
-  ECG301: {
-    name: "電資大樓電腦教室",
-    capacity: 60,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: true,
-  },
-  ECG302: {
-    name: "電資大樓普通教室",
-    capacity: 50,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  ECG310: {
-    name: "視聽教室",
-    capacity: 80,
-    projector: true,
-    whiteboard: false,
-    network: true,
-    mic: true,
-  },
-  LIB410: {
-    name: "圖書館研討室 A",
-    capacity: 12,
-    projector: false,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  LIB411: {
-    name: "圖書館研討室 B",
-    capacity: 16,
-    projector: false,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  GH101: {
-    name: "綜一普通教室 101",
-    capacity: 45,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  GH102: {
-    name: "綜一普通教室 102",
-    capacity: 45,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
-  GH201: {
-    name: "綜二講堂 201",
-    capacity: 120,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: true,
-  },
-  GH202: {
-    name: "綜二普通教室 202",
-    capacity: 60,
-    projector: true,
-    whiteboard: true,
-    network: true,
-    mic: false,
-  },
+  INS201: { name: "資工系電腦教室", capacity: 40, projector: true, whiteboard: true, network: true, mic: false },
+  INS202: { name: "資工系普通教室", capacity: 30, projector: true, whiteboard: true, network: true, mic: false },
+  INS301: { name: "專題討論室", capacity: 20, projector: false, whiteboard: true, network: true, mic: false },
+  INS302: { name: "會議教室", capacity: 25, projector: true, whiteboard: true, network: true, mic: true },
+  ECG301: { name: "電資大樓電腦教室", capacity: 60, projector: true, whiteboard: true, network: true, mic: true },
+  ECG302: { name: "電資大樓普通教室", capacity: 50, projector: true, whiteboard: true, network: true, mic: false },
+  ECG310: { name: "視聽教室", capacity: 80, projector: true, whiteboard: false, network: true, mic: true },
+  LIB410: { name: "圖書館研討室 A", capacity: 12, projector: false, whiteboard: true, network: true, mic: false },
+  LIB411: { name: "圖書館研討室 B", capacity: 16, projector: false, whiteboard: true, network: true, mic: false },
+  GH101: { name: "綜一普通教室 101", capacity: 45, projector: true, whiteboard: true, network: true, mic: false },
+  GH102: { name: "綜一普通教室 102", capacity: 45, projector: true, whiteboard: true, network: true, mic: false },
+  GH201: { name: "綜二講堂 201", capacity: 120, projector: true, whiteboard: true, network: true, mic: true },
+  GH202: { name: "綜二普通教室 202", capacity: 60, projector: true, whiteboard: true, network: true, mic: false },
 };
 
 function expandBlocks(blocks) {
@@ -154,12 +63,10 @@ function expandBlocks(blocks) {
 
 /** 日期＋時間版日曆 */
 function DateTimeCalendar({ room, occupied, onReserve }) {
-  const [selectedDate, setSelectedDate] = useState(null); // 目前選到哪一天
-  const [selectedTime, setSelectedTime] = useState(""); // 目前選到哪個時段
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState("");
   const [purpose, setPurpose] = useState("");
 
-
-  // 月曆現在顯示的「月份」（固定在每月 1 號）
   const [currentMonth, setCurrentMonth] = useState(() => {
     const d = new Date();
     d.setDate(1);
@@ -167,14 +74,12 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     return d;
   });
 
-  // 最小日期：今天
   const today = useMemo(() => {
     const d = new Date();
     d.setHours(0, 0, 0, 0);
     return d;
   }, []);
 
-  // 最大日期：今天 + 6 個月
   const maxDate = useMemo(() => {
     const d = new Date(today);
     d.setMonth(d.getMonth() + 6);
@@ -182,28 +87,16 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     return d;
   }, [today]);
 
-  const isSameDate = (a, b) => {
-    return (
-      a &&
-      b &&
-      a.getFullYear() === b.getFullYear() &&
-      a.getMonth() === b.getMonth() &&
-      a.getDate() === b.getDate()
-    );
-  };
+  const isSameDate = (a, b) =>
+    a && b && a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
 
   const isBefore = (a, b) => a.getTime() < b.getTime();
   const isAfter = (a, b) => a.getTime() > b.getTime();
 
-  // 產生目前月份月曆要顯示的 6x7 日期格
   const calendarDays = useMemo(() => {
     const days = [];
-    const firstOfMonth = new Date(currentMonth); // ex: 2025-12-01
-    const start = new Date(
-      firstOfMonth.getFullYear(),
-      firstOfMonth.getMonth(),
-      1 - firstOfMonth.getDay() // 讓第一格是「該月第一天那週的星期日」
-    );
+    const firstOfMonth = new Date(currentMonth);
+    const start = new Date(firstOfMonth.getFullYear(), firstOfMonth.getMonth(), 1 - firstOfMonth.getDay());
     start.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 42; i++) {
@@ -215,7 +108,6 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     return days;
   }, [currentMonth]);
 
-  // 是否可以往前 / 往後切換月份（避免超出半年範圍）
   const canGoPrev = useMemo(() => {
     const prevMonth = new Date(currentMonth);
     prevMonth.setMonth(prevMonth.getMonth() - 1);
@@ -224,10 +116,10 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 
     const endPrev = new Date(prevMonth);
     endPrev.setMonth(endPrev.getMonth() + 1);
-    endPrev.setDate(0); // 上個月最後一天
+    endPrev.setDate(0);
     endPrev.setHours(0, 0, 0, 0);
 
-    return !isBefore(endPrev, today); // 只要這個月的最後一天 >= today 就可以往前
+    return !isBefore(endPrev, today);
   }, [currentMonth, today]);
 
   const canGoNext = useMemo(() => {
@@ -235,8 +127,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     nextMonth.setMonth(nextMonth.getMonth() + 1);
     nextMonth.setDate(1);
     nextMonth.setHours(0, 0, 0, 0);
-
-    return !isAfter(nextMonth, maxDate); // 下個月的 1 號不能比 maxDate 還晚
+    return !isAfter(nextMonth, maxDate);
   }, [currentMonth, maxDate]);
 
   const handleChangeMonth = (offset) => {
@@ -245,20 +136,16 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     newMonth.setDate(1);
     newMonth.setHours(0, 0, 0, 0);
 
-    // 安全檢查：若整個月份都在範圍外，就不切
     const monthStart = newMonth;
     const monthEnd = new Date(newMonth);
     monthEnd.setMonth(monthEnd.getMonth() + 1);
     monthEnd.setDate(0);
     monthEnd.setHours(0, 0, 0, 0);
 
-    if (isAfter(monthStart, maxDate) || isBefore(monthEnd, today)) {
-      return;
-    }
+    if (isAfter(monthStart, maxDate) || isBefore(monthEnd, today)) return;
     setCurrentMonth(newMonth);
   };
 
-  // 產生可選時間下拉選單（8:00 ~ 21:00，每小時一格）
   const timeSlots = useMemo(() => {
     const slots = [];
     for (let h = START_HOUR; h < END_HOUR; h++) {
@@ -267,16 +154,13 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
     return slots;
   }, []);
 
-  // 某一天已被預約的「小時集合」
   const occupiedSet = useMemo(() => {
     if (!selectedDate || !occupied) return new Set();
-    const dateStr = formatDateLocal(selectedDate); // 用本地日期
+    const dateStr = formatDateLocal(selectedDate);
     const blocks = occupied[dateStr] || [];
     const set = new Set();
     blocks.forEach((block) => {
-      for (let h = block.start; h < block.end; h++) {
-        set.add(h);
-      }
+      for (let h = block.start; h < block.end; h++) set.add(h);
     });
     return set;
   }, [selectedDate, occupied]);
@@ -284,10 +168,7 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
   const handleSelectDate = (day) => {
     const d = new Date(day);
     d.setHours(0, 0, 0, 0);
-
-    // 超出可選範圍就直接 return
     if (isBefore(d, today) || isAfter(d, maxDate)) return;
-
     setSelectedDate(d);
     setSelectedTime("");
   };
@@ -299,16 +180,14 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 
     onReserve?.({
       room,
-      date: formatDateLocal(selectedDate), // 本地日期字串
+      date: formatDateLocal(selectedDate),
       start: slot.start,
       end: slot.end,
       reason: purpose.trim(),
     });
   };
 
-  const formatMonthTitle = (d) =>
-    `${d.getFullYear()}年${d.getMonth() + 1}月`;
-
+  const formatMonthTitle = (d) => `${d.getFullYear()}年${d.getMonth() + 1}月`;
   const weekdayNames = ["日", "一", "二", "三", "四", "五", "六"];
 
   const formatDateLong = (d) => {
@@ -321,28 +200,15 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 
   return (
     <div className="cal-wrap">
-      {/* 左邊：月曆 */}
       <div className="cal-left">
         <div className="cal-title">選擇日期</div>
 
         <div className="cal-month-header">
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={() => handleChangeMonth(-1)}
-            disabled={!canGoPrev}
-          >
+          <button type="button" className="cal-nav-btn" onClick={() => handleChangeMonth(-1)} disabled={!canGoPrev}>
             ‹
           </button>
-          <div className="cal-month-title">
-            {formatMonthTitle(currentMonth)}
-          </div>
-          <button
-            type="button"
-            className="cal-nav-btn"
-            onClick={() => handleChangeMonth(1)}
-            disabled={!canGoNext}
-          >
+          <div className="cal-month-title">{formatMonthTitle(currentMonth)}</div>
+          <button type="button" className="cal-nav-btn" onClick={() => handleChangeMonth(1)} disabled={!canGoNext}>
             ›
           </button>
         </div>
@@ -383,28 +249,18 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
         </div>
       </div>
 
-      {/* 右邊：時間下拉 + 預約按鈕 */}
       <div className="cal-right">
         <div className="cal-title">選擇時間</div>
-        <select
-          className="cal-time-select"
-          value={selectedTime}
-          onChange={(e) => setSelectedTime(e.target.value)}
-        >
+        <select className="cal-time-select" value={selectedTime} onChange={(e) => setSelectedTime(e.target.value)}>
           <option value="">請選擇時段</option>
           {timeSlots.map((slot) => (
-            <option
-              key={slot.label}
-              value={slot.label}
-              disabled={occupiedSet.has(slot.start)} // 此小時已被預約就禁用
-            >
+            <option key={slot.label} value={slot.label} disabled={occupiedSet.has(slot.start)}>
               {slot.label}
               {occupiedSet.has(slot.start) ? "（已被預約）" : ""}
             </option>
           ))}
         </select>
 
-                {/* 申請用途 */}
         <div style={{ marginTop: 12 }}>
           <label
             style={{
@@ -435,14 +291,8 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
         </div>
 
         <div className="wk-actions" style={{ marginTop: 16 }}>
-          <button
-            className="cb-btn"
-            disabled={!selectedDate || !selectedTime}
-            onClick={handleReserveClick}
-          >
-            {selectedDate && selectedTime
-              ? `預約：${room}｜${formatDateLong(selectedDate)}｜${selectedTime}`
-              : "請先選擇日期與時間"}
+          <button className="cb-btn" disabled={!selectedDate || !selectedTime} onClick={handleReserveClick}>
+            {selectedDate && selectedTime ? `預約：${room}｜${formatDateLong(selectedDate)}｜${selectedTime}` : "請先選擇日期與時間"}
           </button>
         </div>
       </div>
@@ -453,18 +303,14 @@ function DateTimeCalendar({ room, occupied, onReserve }) {
 export default function ClassroomBooking() {
   const navigate = useNavigate();
 
-  // 從 API 載入的資料 (buildings)
   const [buildings, setBuildings] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
 
-  /** 側邊「大樓搜尋」用 */
   const [buildingSearch, setBuildingSearch] = useState("");
 
-  /** 進階搜尋條件（教室用） */
-  const [keyword, setKeyword] = useState(""); // 關鍵字：201 也能抓到 INS201
-  const [minCapacity, setMinCapacity] = useState(""); // 最少人數
+  const [keyword, setKeyword] = useState("");
+  const [minCapacity, setMinCapacity] = useState("");
 
-  // 設備條件：投影機 / 白板 / 網路 / 麥克風
   const [needProjector, setNeedProjector] = useState(false);
   const [needWhiteboard, setNeedWhiteboard] = useState(false);
   const [needNetwork, setNeedNetwork] = useState(false);
@@ -474,32 +320,146 @@ export default function ClassroomBooking() {
   const [selectedRoom, setSelectedRoom] = useState(null);
 
   const [showHistory, setShowHistory] = useState(false);
-  const [showRequests, setShowRequests] = useState(false); // 租借請求管理頁
-  const [allReservations, setAllReservations] = useState([]); // 所有預約（管理員用）
-  const [myReservations, setMyReservations] = useState([]); // 我的預約（一般使用者用）
+  const [showRequests, setShowRequests] = useState(false);
+
+  // ✅ 新增：避免「空資料一直顯示載入中 / 或載入前先顯示空狀態」
+  const [loadingBuildings, setLoadingBuildings] = useState(true);
+  const [loadingRooms, setLoadingRooms] = useState(false);
+
+  // ✅ 快取 + 預載
+  const [allReservations, setAllReservations] = useState([]);
+  const [myReservations, setMyReservations] = useState([]);
+  const [loadingMy, setLoadingMy] = useState(false);
+  const [loadingAll, setLoadingAll] = useState(false);
+
+  const inFlight = useRef({ my: false, all: false });
+  const cacheTs = useRef({ my: 0, all: 0 });
+  const CACHE_TTL = 60 * 1000;
+
   const [history, setHistory] = useState(() => {
-    // 從 localStorage 載入歷史紀錄
     const saved = localStorage.getItem("reservation_history");
     return saved ? JSON.parse(saved) : [];
   });
 
-  // 使用 useAuth hook 取得所有認證相關的狀態與函式
-  // account 是 username (email), user 是使用者名稱, isAdmin 是管理員身份
   const { account, user, isAdmin, logout, refreshAccessToken } = useAuth();
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showAdminMenu, setShowAdminMenu] = useState(false);
 
   const [occupiedMap, setOccupiedMap] = useState({});
 
-  // 當 history 改變時，儲存到 localStorage
   useEffect(() => {
     localStorage.setItem("reservation_history", JSON.stringify(history));
   }, [history]);
 
-  // 載入大樓列表
+  // ✅ 統一把 API 回傳轉成「陣列」
+  const normalizeList = (data) => {
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray(data.results)) return data.results;
+    return [];
+  };
+
+  // ✅ 統一帶 auth 的 fetch（含 token refresh）
+  const fetchWithAuth = async (url, options = {}) => {
+    let token = localStorage.getItem("access_token");
+    if (!token) throw new Error("no_token");
+
+    const doReq = (t) =>
+      fetch(url, {
+        ...options,
+        headers: {
+          ...(options.headers || {}),
+          Authorization: `Bearer ${t}`,
+        },
+      });
+
+    let res = await doReq(token);
+
+    if (res.status === 401) {
+      const newToken = await refreshAccessToken();
+      if (!newToken) throw new Error("auth_expired");
+      res = await doReq(newToken);
+    }
+
+    return res;
+  };
+
+  // ✅ 載入「我的預約」（空資料也快取，避免一直載入）
+  const loadMyReservations = async ({ force = false } = {}) => {
+    if (!account) return;
+    if (inFlight.current.my) return;
+
+    const now = Date.now();
+    if (!force && now - cacheTs.current.my < CACHE_TTL) return;
+
+    inFlight.current.my = true;
+    setLoadingMy(true);
+
+    try {
+      const url = `${API_ENDPOINTS.reservations()}?limit=200`;
+      const res = await fetchWithAuth(url);
+
+      if (!res.ok) throw new Error("load_my_failed");
+      const data = await res.json();
+
+      setMyReservations(normalizeList(data));
+      cacheTs.current.my = Date.now();
+    } catch (e) {
+      console.error("loadMyReservations failed:", e);
+      if (String(e?.message) === "auth_expired") logout();
+
+      setMyReservations([]);
+      cacheTs.current.my = Date.now();
+    } finally {
+      setLoadingMy(false);
+      inFlight.current.my = false;
+    }
+  };
+
+  // ✅ 載入「全部預約」（管理員）（空資料也快取）
+  const loadAllReservations = async ({ force = false } = {}) => {
+    if (!isAdmin) return;
+    if (inFlight.current.all) return;
+
+    const now = Date.now();
+    if (!force && now - cacheTs.current.all < CACHE_TTL) return;
+
+    inFlight.current.all = true;
+    setLoadingAll(true);
+
+    try {
+      const url = `${API_ENDPOINTS.reservations()}?view_all=true&status=pending&limit=200`;
+      const res = await fetchWithAuth(url);
+
+      if (!res.ok) throw new Error("load_all_failed");
+      const data = await res.json();
+
+      setAllReservations(normalizeList(data));
+      cacheTs.current.all = Date.now();
+    } catch (e) {
+      console.error("loadAllReservations failed:", e);
+      if (String(e?.message) === "auth_expired") logout();
+
+      setAllReservations([]);
+      cacheTs.current.all = Date.now();
+    } finally {
+      setLoadingAll(false);
+      inFlight.current.all = false;
+    }
+  };
+
+  // ✅ 進主頁先預載
+  useEffect(() => {
+    if (!account) return;
+    loadMyReservations();
+    if (isAdmin) loadAllReservations();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [account, isAdmin]);
+
+  // ✅ 載入大樓列表（加入 loadingBuildings）
   useEffect(() => {
     const fetchBuildings = async () => {
       try {
+        setLoadingBuildings(true);
         const res = await fetch(API_ENDPOINTS.buildings());
         if (!res.ok) throw new Error("載入大樓列表失敗");
         const data = await res.json();
@@ -507,23 +467,28 @@ export default function ClassroomBooking() {
       } catch (error) {
         console.error("載入大樓列表失敗:", error);
         alert("載入大樓列表失敗");
+        setBuildings([]);
+      } finally {
+        setLoadingBuildings(false);
       }
     };
     fetchBuildings();
   }, []);
 
-  // 載入教室列表（根據搜尋條件）
+  // ✅ 載入教室列表（根據搜尋條件）（加入 loadingRooms + 防止舊請求覆蓋）
   useEffect(() => {
     if (!selectedBuilding) {
       setClassrooms([]);
       return;
     }
 
+    let alive = true;
+
     const fetchClassrooms = async () => {
       try {
-        const params = new URLSearchParams({
-          building: selectedBuilding.code,
-        });
+        setLoadingRooms(true);
+
+        const params = new URLSearchParams({ building: selectedBuilding.code });
 
         if (keyword) params.append("search", keyword);
         if (minCapacity) params.append("min_capacity", minCapacity);
@@ -535,24 +500,27 @@ export default function ClassroomBooking() {
         const res = await fetch(API_ENDPOINTS.classrooms(params.toString()));
         if (!res.ok) throw new Error("載入教室列表失敗");
         const data = await res.json();
+
+        if (!alive) return;
+
         setClassrooms(data.results || data);
         setSelectedRoom(null);
       } catch (error) {
         console.error("載入教室列表失敗:", error);
         alert("載入教室列表失敗");
+        if (!alive) return;
+        setClassrooms([]);
+      } finally {
+        if (alive) setLoadingRooms(false);
       }
     };
 
     fetchClassrooms();
-  }, [
-    selectedBuilding,
-    keyword,
-    minCapacity,
-    needProjector,
-    needWhiteboard,
-    needNetwork,
-    needMic,
-  ]);
+
+    return () => {
+      alive = false;
+    };
+  }, [selectedBuilding, keyword, minCapacity, needProjector, needWhiteboard, needNetwork, needMic]);
 
   // 載入已預約時段（未來半年）
   useEffect(() => {
@@ -560,7 +528,6 @@ export default function ClassroomBooking() {
 
     const fetchOccupiedSlots = async () => {
       try {
-        // 只抓「今天 ~ 未來 6 個月」的預約資料
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         const endDate = new Date(today);
@@ -572,87 +539,31 @@ export default function ClassroomBooking() {
           date_to: formatDateLocal(endDate),
         });
 
-        const res = await fetch(
-          API_ENDPOINTS.occupiedSlots(params.toString())
-        );
+        const res = await fetch(API_ENDPOINTS.occupiedSlots(params.toString()));
         if (!res.ok) throw new Error("載入預約時段失敗");
         const data = await res.json();
 
-        // 轉成：{ "YYYY-MM-DD": [ {start, end}, ... ] }
         const byDate = {};
         data.forEach((slot) => {
-          const dateStr = slot.date; // 後端回傳 "YYYY-MM-DD"
+          const dateStr = slot.date;
           const [start, end] = slot.time_slot.split("-").map(Number);
-          if (!byDate[dateStr]) {
-            byDate[dateStr] = [];
-          }
+          if (!byDate[dateStr]) byDate[dateStr] = [];
           byDate[dateStr].push({ start, end });
         });
 
-        // 只更新目前這間教室的占用資料
-        setOccupiedMap((prev) => ({
-          ...prev,
-          [selectedRoom]: byDate,
-        }));
+        setOccupiedMap((prev) => ({ ...prev, [selectedRoom]: byDate }));
       } catch (error) {
         console.error("載入預約時段失敗:", error);
-        // 失敗時不動原本資料，避免把其他教室資訊洗掉
       }
     };
 
     fetchOccupiedSlots();
   }, [selectedRoom]);
 
-  // 進入「歷史紀錄」時，從後端載入自己的預約
-  useEffect(() => {
-    if (!account || !showHistory) return;
-
-    const fetchMyReservations = async () => {
-      try {
-        let token = localStorage.getItem("access_token");
-        if (!token) return;
-
-        const doRequest = async (accessToken) =>
-          fetch(API_ENDPOINTS.reservations(), {
-            headers: {
-              Authorization: `Bearer ${accessToken}`,
-            },
-          });
-
-        let res = await doRequest(token);
-
-        // token 過期 → 嘗試 refresh
-        if (res.status === 401) {
-          const newToken = await refreshAccessToken();
-          if (!newToken) {
-            alert("登入已過期，請重新登入");
-            logout();
-            return;
-          }
-          res = await doRequest(newToken);
-        }
-
-        if (!res.ok) throw new Error("載入我的預約失敗");
-
-        const data = await res.json();
-        setMyReservations(data);
-      } catch (err) {
-        console.error("載入我的預約失敗:", err);
-      }
-    };
-
-    fetchMyReservations();
-  }, [account, showHistory, refreshAccessToken, logout]);
-
-  /** 側邊大樓清單的搜尋結果 */
   const filteredBuildings = useMemo(() => {
     const kw = buildingSearch.trim().toLowerCase();
     if (!kw) return buildings;
-    return buildings.filter(
-      (b) =>
-        b.name.toLowerCase().includes(kw) ||
-        b.code.toLowerCase().includes(kw)
-    );
+    return buildings.filter((b) => b.name.toLowerCase().includes(kw) || b.code.toLowerCase().includes(kw));
   }, [buildingSearch, buildings]);
 
   const resetFilters = () => {
@@ -678,12 +589,15 @@ export default function ClassroomBooking() {
     setSelectedBuilding(null);
     setSelectedRoom(null);
     setClassrooms([]);
+
+    // ✅ 登出後跳提示
+    alert("已成功登出");
+
+    // ✅（可選）導回登入頁，避免留在同頁誤操作
+    navigate("/login");
   };
 
-  /** 根據條件過濾教室（已由 API 處理，這裡只是保留前端邏輯） */
-  const filteredRooms = useMemo(() => {
-    return classrooms;
-  }, [classrooms]);
+  const filteredRooms = useMemo(() => classrooms, [classrooms]);
 
   const resetSelection = () => {
     setSelectedBuilding(null);
@@ -691,7 +605,7 @@ export default function ClassroomBooking() {
   };
 
   /** 預約事件：打後端 /api/reservations/ */
-  const handleReserve = async ({ room, date, start, end ,reason}) => {
+  const handleReserve = async ({ room, date, start, end, reason }) => {
     let token = localStorage.getItem("access_token");
     if (!token) {
       alert("請先登入後再預約");
@@ -699,7 +613,6 @@ export default function ClassroomBooking() {
       return;
     }
 
-    // date 已經是 "YYYY-MM-DD"
     const dateString = date;
 
     const payload = {
@@ -709,8 +622,8 @@ export default function ClassroomBooking() {
       reason: reason || "",
     };
 
-    const makeRequest = async (accessToken) => {
-      return await fetch(API_ENDPOINTS.reservations(), {
+    const makeRequest = async (accessToken) =>
+      fetch(API_ENDPOINTS.reservations(), {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -718,17 +631,13 @@ export default function ClassroomBooking() {
         },
         body: JSON.stringify(payload),
       });
-    };
 
     try {
       let res = await makeRequest(token);
       let data = await res.json().catch(() => ({}));
 
-      // 如果 token 過期，嘗試刷新
       if (res.status === 401 && data.code === "token_not_valid") {
-        console.log("Token expired, attempting refresh...");
         const newToken = await refreshAccessToken();
-
         if (newToken) {
           token = newToken;
           res = await makeRequest(token);
@@ -741,18 +650,12 @@ export default function ClassroomBooking() {
         }
       }
 
-      console.log("reserve response =", res.status, data);
-
       if (!res.ok) {
-        if (data.detail) {
-          alert("預約失敗：" + data.detail);
-        } else {
-          alert("預約失敗：" + JSON.stringify(data));
-        }
+        if (data.detail) alert("預約失敗：" + data.detail);
+        else alert("預約失敗：" + JSON.stringify(data));
         return;
       }
 
-      // 預約成功後重新載入該教室「未來半年」的已預約時段
       const refreshOccupiedSlots = async () => {
         try {
           const today = new Date();
@@ -766,41 +669,30 @@ export default function ClassroomBooking() {
             date_to: formatDateLocal(endDate),
           });
 
-          const res = await fetch(
-            API_ENDPOINTS.occupiedSlots(params.toString())
-          );
-          if (!res.ok) throw new Error("載入預約時段失敗");
+          const res2 = await fetch(API_ENDPOINTS.occupiedSlots(params.toString()));
+          if (!res2.ok) throw new Error("載入預約時段失敗");
 
-          const data = await res.json();
-
+          const data2 = await res2.json();
           const byDate = {};
-          data.forEach((slot) => {
+
+          data2.forEach((slot) => {
             const dateStr = slot.date;
             const [s, e] = slot.time_slot.split("-").map(Number);
-
-            if (!byDate[dateStr]) {
-              byDate[dateStr] = [];
-            }
-
+            if (!byDate[dateStr]) byDate[dateStr] = [];
             byDate[dateStr].push({ start: s, end: e });
           });
 
-          setOccupiedMap((prev) => ({
-            ...prev,
-            [room]: byDate,
-          }));
+          setOccupiedMap((prev) => ({ ...prev, [room]: byDate }));
         } catch (error) {
           console.error("載入預約時段失敗:", error);
         }
       };
 
-      // 週幾顯示用
       const dObj = new Date(dateString);
-      const jsDay = dObj.getDay(); // 0:日 ~ 6:六
-      const dayIndex = ((jsDay + 6) % 7) + 1; // 1~7（週一~週日）
+      const jsDay = dObj.getDay();
+      const dayIndex = ((jsDay + 6) % 7) + 1;
       const weekName = WEEK_DAYS[dayIndex - 1];
 
-      // 更新本地歷史紀錄
       setHistory((old) => [
         ...old,
         {
@@ -813,14 +705,16 @@ export default function ClassroomBooking() {
           end,
           status: data.status || "pending",
           date: dateString,
+          reason: reason || "",
         },
       ]);
 
-      alert(
-        `預約成功：${room}｜${dateString}（週${weekName}） ${start}:00–${end}:00`
-      );
+      alert(`預約成功：${room}｜${dateString}（週${weekName}） ${start}:00–${end}:00`);
 
       await refreshOccupiedSlots();
+
+      loadMyReservations({ force: true });
+      if (isAdmin) loadAllReservations({ force: true });
     } catch (err) {
       console.error(err);
       alert("預約失敗：無法連線到伺服器");
@@ -830,13 +724,7 @@ export default function ClassroomBooking() {
   const handleCancelReservation = async (reservation) => {
     const { classroom, date, time_slot } = reservation;
 
-    if (
-      !window.confirm(
-        `確定要取消 ${classroom} ${date} ${time_slot} 的預約嗎？`
-      )
-    ) {
-      return;
-    }
+    if (!window.confirm(`確定要取消 ${classroom} ${date} ${time_slot} 的預約嗎？`)) return;
 
     try {
       let token = localStorage.getItem("access_token");
@@ -852,7 +740,6 @@ export default function ClassroomBooking() {
 
       let res = await doRequest(token);
 
-      // token 過期
       if (res.status === 401) {
         const newToken = await refreshAccessToken();
         if (!newToken) {
@@ -869,16 +756,12 @@ export default function ClassroomBooking() {
         throw new Error(errBody.detail || errBody.error || "取消預約失敗");
       }
 
-      // 更新前端 myReservations
-      setMyReservations((prev) =>
-        prev.map((r) =>
-          r.id === reservation.id
-            ? { ...r, status: "cancelled" }
-            : r
-        )
-      );
+      setMyReservations((prev) => prev.map((r) => (r.id === reservation.id ? { ...r, status: "cancelled" } : r)));
 
       alert("預約已成功取消");
+
+      loadMyReservations({ force: true });
+      if (isAdmin) loadAllReservations({ force: true });
     } catch (error) {
       console.error("取消預約失敗:", error);
       alert(error.message || "取消預約失敗");
@@ -887,8 +770,23 @@ export default function ClassroomBooking() {
 
   /** 歷史頁（用 myReservations，支援取消） */
   const HistoryPanel = () => {
-    const hasServerHistory = myReservations && myReservations.length > 0;
-    const hasLocalHistory = history && history.length > 0;
+    useEffect(() => {
+      if (!showHistory) return;
+      loadMyReservations();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [showHistory]);
+
+    if (loadingMy) {
+      return (
+        <div className="cb-section">
+          <h2 className="cb-section-title">我的教室預約歷史</h2>
+          <div className="cb-selection-banner">載入中…</div>
+        </div>
+      );
+    }
+
+    const hasServerHistory = Array.isArray(myReservations) && myReservations.length > 0;
+    const hasLocalHistory = Array.isArray(history) && history.length > 0;
     const hasHistory = hasServerHistory || hasLocalHistory;
 
     const getStatusLabel = (status, item) => {
@@ -896,7 +794,6 @@ export default function ClassroomBooking() {
         case "approved":
           return "已批准";
         case "rejected":
-          // 有被我們標記 _cancelledByUser 的視為「已取消」
           return item?._cancelledByUser ? "已取消" : "已拒絕";
         case "cancelled":
           return "已取消";
@@ -909,17 +806,14 @@ export default function ClassroomBooking() {
     const getStatusStyle = (status, item) => {
       switch (status) {
         case "approved":
-          return { color: "#1d4ed8", fontWeight: 600 }; // 藍色
+          return { color: "#1d4ed8", fontWeight: 600 };
         case "rejected":
-          // 自己取消的顯示成灰色，被拒絕的顯示紅色
-          return item?._cancelledByUser
-            ? { color: "#6b7280", fontWeight: 600 } // 已取消：灰
-            : { color: "#dc2626", fontWeight: 600 }; // 已拒絕：紅
+          return item?._cancelledByUser ? { color: "#6b7280", fontWeight: 600 } : { color: "#dc2626", fontWeight: 600 };
         case "cancelled":
-          return { color: "#6b7280", fontWeight: 600 }; // 灰
+          return { color: "#6b7280", fontWeight: 600 };
         case "pending":
         default:
-          return { color: "#111827", fontWeight: 600 }; // 黑
+          return { color: "#111827", fontWeight: 600 };
       }
     };
 
@@ -932,10 +826,8 @@ export default function ClassroomBooking() {
       );
     }
 
-    // 優先顯示從後端抓到的 myReservations
     const rawList = hasServerHistory ? myReservations : history;
 
-    // 依「送出時間」從新到舊排序
     const list = [...rawList].sort((a, b) => {
       const getTime = (x) => {
         const t = x.created_at || x.ts || x.date;
@@ -949,76 +841,39 @@ export default function ClassroomBooking() {
         <h2 className="cb-section-title">我的教室預約歷史</h2>
         <ol className="cb-list dashed cb-history-list">
           {list.map((item, idx) => {
-            const fromServer = "classroom" in item;
+            const fromServer = item && typeof item === "object" && "classroom" in item;
 
             const room = fromServer ? item.classroom : item.room;
             const date = item.date;
             const status = item.status || "pending";
 
-            const timeLabel = fromServer
-              ? item.time_slot
-              : `${item.start}:00–${item.end}:00`;
+            const timeLabel = fromServer ? item.time_slot : `${item.start}:00–${item.end}:00`;
 
-            const canCancel =
-              fromServer && status !== "rejected" && status !== "cancelled";
+            const canCancel = fromServer && status !== "rejected" && status !== "cancelled";
 
-            const submittedAt =
-              item.created_at
-                ? new Date(item.created_at)
-                : item.ts
-                ? new Date(item.ts)
-                : null;
+            const submittedAt = item.created_at ? new Date(item.created_at) : item.ts ? new Date(item.ts) : null;
 
-            // ⭐ 申請用途（拿不到就顯示「無」）
-            const purpose =
-              item.purpose ||
-              item.reason ||
-              item.usage ||
-              item.apply_reason ||
-              "無";
+            const purpose = item.purpose || item.reason || item.usage || item.apply_reason || "無";
 
             return (
-              <li
-                key={(item.id || item.ts) + "-" + idx}
-                className="cb-history-item"
-              >
-                {/* 左邊文字 */}
+              <li key={(item.id || item.ts || idx) + "-" + idx} className="cb-history-item">
                 <div className="cb-history-main">
                   <div style={{ fontWeight: 800 }}>教室：{room}</div>
                   <div>
                     日期：{date} | 時段：{timeLabel}
                   </div>
 
-                  {/* ⭐ 申請用途（永遠顯示） */}
-                  <div
-                    style={{
-                      fontSize: 12,
-                      color: "#6b7280",
-                      marginTop: 4,
-                    }}
-                  >
-                    申請用途：{purpose}
-                  </div>
+                  <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>申請用途：{purpose}</div>
 
-                  {/* 送出時間 */}
                   {submittedAt && (
-                    <div
-                      style={{
-                        fontSize: 12,
-                        color: "#6b7280",
-                        marginTop: 4,
-                      }}
-                    >
+                    <div style={{ fontSize: 12, color: "#6b7280", marginTop: 4 }}>
                       送出時間：{submittedAt.toLocaleString()}
                     </div>
                   )}
                 </div>
 
-                {/* 右邊狀態 + 取消按鈕 */}
                 <div className="cb-history-status">
-                  <span style={getStatusStyle(status, item)}>
-                    {getStatusLabel(status, item)}
-                  </span>
+                  <span style={getStatusStyle(status, item)}>{getStatusLabel(status, item)}</span>
 
                   {canCancel && (
                     <button
@@ -1041,71 +896,28 @@ export default function ClassroomBooking() {
   /** 管理員租借請求審核頁 */
   const RequestPanel = () => {
     useEffect(() => {
-      if (!isAdmin) return;
-
-      const fetchAllReservations = async () => {
-        try {
-          const token = localStorage.getItem("access_token");
-          const res = await fetch(
-            `${API_ENDPOINTS.reservations()}?view_all=true`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          );
-
-          if (res.status === 401) {
-            await refreshAccessToken();
-            return;
-          }
-
-          if (!res.ok) throw new Error("載入預約列表失敗");
-
-          const data = await res.json();
-          setAllReservations(data);
-        } catch (error) {
-          console.error("載入預約列表失敗:", error);
-          alert("載入預約列表失敗");
-        }
-      };
-
-      fetchAllReservations();
-    }, [isAdmin, showRequests, refreshAccessToken]);
+      if (!isAdmin || !showRequests) return;
+      loadAllReservations();
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isAdmin, showRequests]);
 
     const handleReviewReservation = async (reservationId, newStatus) => {
       try {
         const token = localStorage.getItem("access_token");
-        const res = await fetch(
-          API_ENDPOINTS.updateReservationStatus(reservationId),
-          {
-            method: "PATCH",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({ status: newStatus }),
-          }
-        );
+        const res = await fetch(API_ENDPOINTS.updateReservationStatus(reservationId), {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ status: newStatus }),
+        });
 
         if (res.status === 401) {
           await refreshAccessToken();
           return;
         }
-
         if (!res.ok) throw new Error("更新預約狀態失敗");
 
-        setAllReservations((prev) =>
-          prev.map((r) =>
-            r.id === reservationId ? { ...r, status: newStatus } : r
-          )
-        );
-
-        setMyReservations((prev) =>
-          prev.map((r) =>
-            r.id === reservationId ? { ...r, status: newStatus } : r
-          )
-        );
+        setAllReservations((prev) => prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r)));
+        setMyReservations((prev) => prev.map((r) => (r.id === reservationId ? { ...r, status: newStatus } : r)));
 
         alert(`預約已${newStatus === "approved" ? "批准" : "拒絕"}`);
       } catch (error) {
@@ -1114,30 +926,30 @@ export default function ClassroomBooking() {
       }
     };
 
-    // 只取 pending，依送出時間由新到舊排序
-    const pendingReservations = allReservations
-      .filter((r) => r.status === "pending")
-      .slice()
-      .sort((a, b) => {
-        const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
-        const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
-        return tb - ta; // 新 → 舊
-      });
+    const pendingReservations = useMemo(() => {
+      return (Array.isArray(allReservations) ? allReservations : [])
+        .filter((r) => r.status === "pending")
+        .slice()
+        .sort((a, b) => {
+          const ta = a.created_at ? new Date(a.created_at).getTime() : 0;
+          const tb = b.created_at ? new Date(b.created_at).getTime() : 0;
+          return tb - ta;
+        });
+    }, [allReservations]);
 
     return (
       <div className="cb-section">
-        <h2 className="cb-section-title">租借請求管理（僅管理員）</h2>
-        {pendingReservations.length === 0 ? (
-          <div className="cb-selection-banner">
-            目前沒有任何待處理的請求。
-          </div>
+        <h2 className="cb-section-title">目前租借請求管理</h2>
+
+        {loadingAll ? (
+          <div className="cb-selection-banner">載入中…</div>
+        ) : pendingReservations.length === 0 ? (
+          <div className="cb-selection-banner">目前沒有任何待處理的請求。</div>
         ) : (
           <ol className="cb-list dashed">
             {pendingReservations.map((reservation) => (
               <li key={reservation.id}>
-                <div style={{ fontWeight: 800 }}>
-                  教室：{reservation.classroom}
-                </div>
+                <div style={{ fontWeight: 800 }}>教室：{reservation.classroom}</div>
                 <div>
                   申請人：{reservation.user_email || "未知"}
                   {reservation.user_name && ` (${reservation.user_name})`}
@@ -1145,29 +957,18 @@ export default function ClassroomBooking() {
                 <div>
                   日期：{reservation.date} | 時段：{reservation.time_slot}
                 </div>
+                <div style={{ color: "#6b7280", fontSize: 13 }}>申請用途：{reservation.reason || "無"}</div>
                 <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  申請用途：{reservation.reason || "無"}
-                </div>
-                <div style={{ color: "#6b7280", fontSize: 13 }}>
-                  送出時間：
-                  {reservation.created_at &&
-                    new Date(reservation.created_at).toLocaleString()}
+                  送出時間：{reservation.created_at && new Date(reservation.created_at).toLocaleString()}
                 </div>
                 <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-                  <button
-                    className="cb-btn"
-                    onClick={() =>
-                      handleReviewReservation(reservation.id, "approved")
-                    }
-                  >
+                  <button className="cb-btn" onClick={() => handleReviewReservation(reservation.id, "approved")}>
                     批准
                   </button>
                   <button
                     className="cb-btn"
                     style={{ background: "#d32f2f" }}
-                    onClick={() =>
-                      handleReviewReservation(reservation.id, "rejected")
-                    }
+                    onClick={() => handleReviewReservation(reservation.id, "rejected")}
                   >
                     拒絕
                   </button>
@@ -1180,7 +981,6 @@ export default function ClassroomBooking() {
     );
   };
 
-  /** 被選中的大樓資料 */
   const selectedRoomMeta = useMemo(() => {
     if (!selectedRoom) return null;
     return classrooms.find((c) => c.room_code === selectedRoom);
@@ -1188,7 +988,6 @@ export default function ClassroomBooking() {
 
   return (
     <div className="cb-root">
-      {/* 左側：大樓列表 */}
       <aside className="cb-sidebar">
         <div className="cb-brand">
           <div className="cb-brand-top">
@@ -1200,11 +999,7 @@ export default function ClassroomBooking() {
           </div>
 
           <div className="cb-breadcrumb">
-            <button
-              className="cb-crumb"
-              disabled={!selectedBuilding}
-              onClick={resetSelection}
-            >
+            <button className="cb-crumb" disabled={!selectedBuilding} onClick={resetSelection}>
               大樓
             </button>
             {selectedBuilding && (
@@ -1217,7 +1012,6 @@ export default function ClassroomBooking() {
             )}
           </div>
 
-          {/* 大樓搜尋欄 */}
           <div className="cb-search">
             <input
               className="cb-search-input"
@@ -1226,164 +1020,145 @@ export default function ClassroomBooking() {
               onChange={(e) => setBuildingSearch(e.target.value)}
             />
             {buildingSearch && (
-              <button
-                className="cb-search-clear"
-                onClick={() => setBuildingSearch("")}
-                aria-label="清除大樓搜尋"
-              >
+              <button className="cb-search-clear" onClick={() => setBuildingSearch("")} aria-label="清除大樓搜尋">
                 ×
               </button>
             )}
           </div>
         </div>
 
-        {/* 大樓清單 */}
         <ul className="cb-tree">
-          {filteredBuildings.map((b) => (
-            <li
-              key={b.code}
-              className="cb-tree-item cb-tree-building"
-              onClick={() => {
-                // 點大樓時順便關掉歷史 / 確認租借畫面，回到預約
-                setShowHistory(false);
-                setShowRequests(false);
-                setSelectedBuilding(b);
-                resetFilters();
-              }}
-            >
-              <span className="cb-building-code">{b.code}</span>
-              <span className="cb-building-name">{b.name}</span>
-            </li>
-          ))}
-
-          {filteredBuildings.length === 0 && (
+          {loadingBuildings ? (
+            <li className="cb-tree-empty">載入中…</li>
+          ) : filteredBuildings.length === 0 ? (
             <li className="cb-tree-empty">找不到符合的教學大樓。</li>
+          ) : (
+            filteredBuildings.map((b) => (
+              <li
+                key={b.code}
+                className="cb-tree-item cb-tree-building"
+                onClick={() => {
+                  setShowHistory(false);
+                  setShowRequests(false);
+                  setSelectedBuilding(b);
+                  resetFilters();
+                }}
+              >
+                <span className="cb-building-code">{b.code}</span>
+                <span className="cb-building-name">{b.name}</span>
+              </li>
+            ))
           )}
         </ul>
       </aside>
 
-      {/* 主畫面 */}
       <section className="cb-main">
         <div className="cb-hero">
           <div className="cb-hero-actions">
-  {(showHistory || showRequests) && (
-    <button
-      className="cb-login-btn"
-      onClick={handleBackToBooking}
-    >
-      返回預約
-    </button>
-  )}
+            {(showHistory || showRequests) && (
+              <button className="cb-login-btn" onClick={handleBackToBooking}>
+                返回預約
+              </button>
+            )}
 
-  {/* ===== 使用者選單（所有登入者都看得到） ===== */}
-  {account ? (
-    <div className="cb-menu">
-      <button
-        className="cb-login-btn"
-        onClick={() => {
-          setShowUserMenu((v) => !v);
-          setShowAdminMenu(false); // 
-}}
+            {account ? (
+              <div className="cb-menu">
+                <button
+                  className="cb-login-btn"
+                  onClick={() => {
+                    setShowUserMenu((v) => !v);
+                    setShowAdminMenu(false);
+                  }}
+                >
+                  {user} ▾
+                </button>
 
-      >
-        {user} ▾
-      </button>
+                {showUserMenu && (
+                  <div className="cb-menu-panel">
+                    <button
+                      className="cb-menu-item"
+                      onClick={() => {
+                        setShowHistory((v) => !v);
+                        setShowRequests(false);
+                        setShowUserMenu(false);
+                      }}
+                    >
+                      歷史紀錄
+                    </button>
 
-      {showUserMenu && (
-        <div className="cb-menu-panel">
-          <button
-            className="cb-menu-item"
-            onClick={() => {
-              setShowHistory((v) => !v);
-              setShowRequests(false);
-              setShowUserMenu(false);
-            }}
-          >
-            歷史紀錄
-          </button>
+                    <button
+                      className="cb-menu-item"
+                      onClick={() => {
+                        navigate("/profile");
+                        setShowUserMenu(false);
+                      }}
+                    >
+                      修改個人資料
+                    </button>
 
-          <button
-            className="cb-menu-item"
-            onClick={() => {
-              navigate("/profile");
-              setShowUserMenu(false);
-            }}
-          >
-            修改個人資料
-          </button>
+                    <div className="cb-menu-divider" />
 
-          <div className="cb-menu-divider" />
+                    <button className="cb-menu-item danger" onClick={handleLogout}>
+                      登出
+                    </button>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <button className="cb-login-btn" onClick={() => navigate("/login")}>
+                登入
+              </button>
+            )}
 
-          <button
-            className="cb-menu-item danger"
-            onClick={handleLogout}
-          >
-            登出
-          </button>
-        </div>
-      )}
-    </div>
-  ) : (
-    <button
-      className="cb-login-btn"
-      onClick={() => navigate("/login")}
-    >
-      登入
-    </button>
-  )}
+            {isAdmin && (
+              <div className="cb-menu">
+                <button
+                  className="cb-login-btn"
+                  onClick={() => {
+                    setShowAdminMenu((v) => !v);
+                    setShowUserMenu(false);
+                  }}
+                >
+                  管理員功能 ▾
+                </button>
 
-  {/* ===== 管理員功能（只有 isAdmin 才會看到） ===== */}
-  {isAdmin && (
-    <div className="cb-menu">
-      <button
-        className="cb-login-btn"
-        onClick={() => {
-        setShowAdminMenu((v) => !v);
-        setShowUserMenu(false); 
-}}
+                {showAdminMenu && (
+                  <div className="cb-menu-panel">
+                    <button
+                      className="cb-menu-item"
+                      onClick={() => {
+                        setShowRequests((v) => !v);
+                        setShowHistory(false);
+                        setShowAdminMenu(false);
+                      }}
+                    >
+                      確認租借
+                    </button>
 
-      >
-        管理員功能 ▾
-      </button>
+                    <button
+                      className="cb-menu-item"
+                      onClick={() => {
+                        navigate("/editing-classroom");
+                        setShowAdminMenu(false);
+                      }}
+                    >
+                      編輯教室
+                    </button>
 
-      {showAdminMenu && (
-        <div className="cb-menu-panel">
-          <button
-            className="cb-menu-item"
-            onClick={() => {
-              setShowRequests((v) => !v);
-              setShowHistory(false);
-              setShowAdminMenu(false);
-            }}
-          >
-            確認租借
-          </button>
-
-          <button
-            className="cb-menu-item"
-            onClick={() => {
-              navigate("/editing-classroom");
-              setShowAdminMenu(false);
-            }}
-          >
-            編輯教室
-          </button>
-
-          <button
-            className="cb-menu-item"
-            onClick={() => {
-              navigate("/blacklist");
-              setShowAdminMenu(false);
-            }}
-          >
-            黑名單
-          </button>
-        </div>
-      )}
-    </div>
-  )}
-</div>
-
+                    <button
+                      className="cb-menu-item"
+                      onClick={() => {
+                        navigate("/blacklist");
+                        setShowAdminMenu(false);
+                      }}
+                    >
+                      黑名單
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="cb-card">
@@ -1391,13 +1166,12 @@ export default function ClassroomBooking() {
             {showRequests
               ? "租借請求管理"
               : showHistory
-              ? "我的教室預約歷史"
+              ? "教室預約歷史"
               : selectedBuilding
               ? "選擇教室與進階搜尋"
               : "教室預約系統說明"}
           </h1>
 
-          {/* 三種畫面 */}
           {showRequests ? (
             <RequestPanel />
           ) : showHistory ? (
@@ -1405,11 +1179,9 @@ export default function ClassroomBooking() {
           ) : selectedBuilding ? (
             <>
               <div className="cb-selection-banner">
-                目前選擇：{selectedBuilding.name}（
-                {selectedBuilding.code}）
+                目前選擇：{selectedBuilding.name}（{selectedBuilding.code}）
               </div>
 
-              {/* 進階搜尋列 */}
               <div className="cb-section">
                 <h2 className="cb-section-title">進階搜尋</h2>
                 <div className="cb-filter-bar">
@@ -1424,14 +1196,8 @@ export default function ClassroomBooking() {
                   </div>
 
                   <div className="cb-filter-group">
-                    <label className="cb-filter-label">
-                      最低容納人數
-                    </label>
-                    <select
-                      className="cb-search-input"
-                      value={minCapacity}
-                      onChange={(e) => setMinCapacity(e.target.value)}
-                    >
+                    <label className="cb-filter-label">最低容納人數</label>
+                    <select className="cb-search-input" value={minCapacity} onChange={(e) => setMinCapacity(e.target.value)}>
                       <option value="">不限</option>
                       <option value="20">20 人以上</option>
                       <option value="40">40 人以上</option>
@@ -1443,55 +1209,27 @@ export default function ClassroomBooking() {
 
                   <div className="cb-filter-group cb-filter-checks">
                     <label className="cb-filter-check">
-                      <input
-                        type="checkbox"
-                        checked={needProjector}
-                        onChange={(e) =>
-                          setNeedProjector(e.target.checked)
-                        }
-                      />
+                      <input type="checkbox" checked={needProjector} onChange={(e) => setNeedProjector(e.target.checked)} />
                       有投影機
                     </label>
 
                     <label className="cb-filter-check">
-                      <input
-                        type="checkbox"
-                        checked={needWhiteboard}
-                        onChange={(e) =>
-                          setNeedWhiteboard(e.target.checked)
-                        }
-                      />
+                      <input type="checkbox" checked={needWhiteboard} onChange={(e) => setNeedWhiteboard(e.target.checked)} />
                       有白板
                     </label>
 
                     <label className="cb-filter-check">
-                      <input
-                        type="checkbox"
-                        checked={needNetwork}
-                        onChange={(e) =>
-                          setNeedNetwork(e.target.checked)
-                        }
-                      />
+                      <input type="checkbox" checked={needNetwork} onChange={(e) => setNeedNetwork(e.target.checked)} />
                       有網路
                     </label>
 
                     <label className="cb-filter-check">
-                      <input
-                        type="checkbox"
-                        checked={needMic}
-                        onChange={(e) =>
-                          setNeedMic(e.target.checked)
-                        }
-                      />
+                      <input type="checkbox" checked={needMic} onChange={(e) => setNeedMic(e.target.checked)} />
                       有麥克風
                     </label>
                   </div>
 
-                  <button
-                    className="cb-btn"
-                    type="button"
-                    onClick={resetFilters}
-                  >
+                  <button className="cb-btn" type="button" onClick={resetFilters}>
                     清除條件
                   </button>
                 </div>
@@ -1499,55 +1237,32 @@ export default function ClassroomBooking() {
 
               <div className="cb-divider" />
 
-              {/* 教室清單 */}
               <div className="cb-section">
                 <h2 className="cb-section-title">可借用教室</h2>
-                {filteredRooms.length === 0 ? (
-                  <div className="cb-selection-banner">
-                    找不到符合條件的教室，請調整搜尋條件。
-                  </div>
+
+                {loadingRooms ? (
+                  <div className="cb-selection-banner">載入中…</div>
+                ) : filteredRooms.length === 0 ? (
+                  <div className="cb-selection-banner">找不到符合條件的教室，請調整搜尋條件。</div>
                 ) : (
                   <div className="cb-room-grid">
                     {filteredRooms.map((classroom) => {
-                      const active =
-                        selectedRoom === classroom.room_code;
+                      const active = selectedRoom === classroom.room_code;
 
                       return (
                         <div
                           key={classroom.room_code}
-                          className={
-                            "cb-room-card" +
-                            (active ? " cb-room-card-active" : "")
-                          }
-                          onClick={() =>
-                            setSelectedRoom(classroom.room_code)
-                          }
+                          className={"cb-room-card" + (active ? " cb-room-card-active" : "")}
+                          onClick={() => setSelectedRoom(classroom.room_code)}
                         >
-                          <div className="cb-room-code">
-                            {classroom.room_code}
-                          </div>
-                          <div className="cb-room-name">
-                            {classroom.name || "教室"}
-                          </div>
-                          <div className="cb-room-capacity">
-                            容納人數：約{" "}
-                            {classroom.capacity || "—"} 人
-                          </div>
+                          <div className="cb-room-code">{classroom.room_code}</div>
+                          <div className="cb-room-name">{classroom.name || "教室"}</div>
+                          <div className="cb-room-capacity">容納人數：約 {classroom.capacity || "—"} 人</div>
                           <div className="cb-room-tags">
-                            {classroom.has_projector && (
-                              <span className="cb-tag">
-                                投影機
-                              </span>
-                            )}
-                            {classroom.has_whiteboard && (
-                              <span className="cb-tag">白板</span>
-                            )}
-                            {classroom.has_mic && (
-                              <span className="cb-tag">麥克風</span>
-                            )}
-                            {classroom.has_network && (
-                              <span className="cb-tag">網路</span>
-                            )}
+                            {classroom.has_projector && <span className="cb-tag">投影機</span>}
+                            {classroom.has_whiteboard && <span className="cb-tag">白板</span>}
+                            {classroom.has_mic && <span className="cb-tag">麥克風</span>}
+                            {classroom.has_network && <span className="cb-tag">網路</span>}
                           </div>
                         </div>
                       );
@@ -1556,7 +1271,6 @@ export default function ClassroomBooking() {
                 )}
               </div>
 
-              {/* 預約日曆 */}
               {selectedRoom && (
                 <>
                   <div className="cb-divider" />
@@ -1564,15 +1278,9 @@ export default function ClassroomBooking() {
                     <h2 className="cb-section-title">預約時段</h2>
                     <div className="wk-room-banner">
                       目前教室：{selectedRoom}
-                      {selectedRoomMeta?.name
-                        ? `｜${selectedRoomMeta.name}`
-                        : ""}
+                      {selectedRoomMeta?.name ? `｜${selectedRoomMeta.name}` : ""}
                     </div>
-                    <DateTimeCalendar
-                      room={selectedRoom}
-                      occupied={occupiedMap[selectedRoom] || {}}
-                      onReserve={handleReserve}
-                    />
+                    <DateTimeCalendar room={selectedRoom} occupied={occupiedMap[selectedRoom] || {}} onReserve={handleReserve} />
                   </div>
                 </>
               )}

@@ -1,4 +1,4 @@
-import { useState,useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import "./App.css";
 import "./EditingClassroom.css";
@@ -8,8 +8,10 @@ import { useAuth } from "./useAuth";
 export default function EditingClassroom() {
   const navigate = useNavigate();
   const { isAdmin, refreshAccessToken, logout } = useAuth();
-  
+
   const [classrooms, setClassrooms] = useState([]);
+  const [loadingClassrooms, setLoadingClassrooms] = useState(true); // ✅ 新增：列表載入狀態
+
   const [saving, setSaving] = useState(false);
   const [newBuilding, setNewBuilding] = useState("");
   const [newRoomCode, setNewRoomCode] = useState("");
@@ -21,7 +23,7 @@ export default function EditingClassroom() {
     has_network: false,
     has_mic: false,
   });
-  
+
   useEffect(() => {
     if (!isAdmin) {
       alert("只有管理員才能存取此頁面");
@@ -29,19 +31,29 @@ export default function EditingClassroom() {
       return;
     }
 
+    let alive = true;
+
     const fetchClassrooms = async () => {
       try {
+        if (alive) setLoadingClassrooms(true); // ✅ 開始載入
         const res = await fetch(API_ENDPOINTS.classrooms("page_size=200")); // 取得所有教室
         if (!res.ok) throw new Error("載入教室列表失敗");
         const data = await res.json();
-        setClassrooms(data.results || []);
+        if (alive) setClassrooms(data.results || []);
       } catch (error) {
         console.error("載入教室列表失敗:", error);
         alert("載入教室列表失敗");
+        if (alive) setClassrooms([]); // ✅ 保底
+      } finally {
+        if (alive) setLoadingClassrooms(false); // ✅ 不管成功失敗都結束載入
       }
     };
 
     fetchClassrooms();
+
+    return () => {
+      alive = false;
+    };
   }, [isAdmin, navigate]);
 
   // 🔹 新增教室
@@ -93,15 +105,22 @@ export default function EditingClassroom() {
 
       if (!res.ok) {
         const errData = await res.json();
-        const errorString = Object.entries(errData).map(([key, value]) => `${key}: ${value}`).join('\n');
+        const errorString = Object.entries(errData)
+          .map(([key, value]) => `${key}: ${value}`)
+          .join("\n");
         throw new Error(errorString || "新增失敗");
       }
 
       const newClassroom = await res.json();
-      setClassrooms((prev) => [...prev, newClassroom].sort((a, b) => a.room_code.localeCompare(b.room_code)));
+      setClassrooms((prev) =>
+        [...prev, newClassroom].sort((a, b) => a.room_code.localeCompare(b.room_code))
+      );
       alert(`教室 ${newClassroom.room_code} 已成功新增！`);
       // 清空表單
-      setNewBuilding(""); setNewRoomCode(""); setNewRoomName(""); setNewCapacity("");
+      setNewBuilding("");
+      setNewRoomCode("");
+      setNewRoomName("");
+      setNewCapacity("");
       setNewEquip({ has_projector: false, has_whiteboard: false, has_network: false, has_mic: false });
     } catch (error) {
       alert(`新增錯誤：\n${error.message}`);
@@ -168,9 +187,7 @@ export default function EditingClassroom() {
 
       // 後端成功後，更新前端 state
       setClassrooms((list) =>
-        list.map((c) =>
-          c.room_code === updatedRoom.room_code ? updatedRoom : c
-        )
+        list.map((c) => (c.room_code === updatedRoom.room_code ? updatedRoom : c))
       );
 
       alert(`教室 ${updatedRoom.room_code} 已成功儲存！`);
@@ -185,9 +202,7 @@ export default function EditingClassroom() {
   // 🔹 切換單一教室的設備 checkbox
   const toggleEquip = (roomCode, field) => {
     setClassrooms((list) =>
-      list.map((c) =>
-        c.room_code === roomCode ? { ...c, [field]: !c[field] } : c
-      )
+      list.map((c) => (c.room_code === roomCode ? { ...c, [field]: !c[field] } : c))
     );
   };
 
@@ -221,13 +236,11 @@ export default function EditingClassroom() {
         }
       }
 
-      // 刪除成功時，後端會回傳 204 No Content，此時 res.ok 會是 true
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || "刪除失敗");
       }
 
-      // 後端成功後，更新前端 state
       setClassrooms((list) => list.filter((c) => c.room_code !== cls.room_code));
       alert(`教室 ${cls.room_code} 已成功刪除！`);
     } catch (error) {
@@ -269,7 +282,11 @@ export default function EditingClassroom() {
           {/* 教室列表 */}
           <div className="cb-section">
             <h2 className="cb-section-title">目前教室</h2>
-            {classrooms.length === 0 ? (
+
+            {/* ✅ 這裡改成：載入中 > 有資料 > 空資料 */}
+            {loadingClassrooms ? (
+              <div className="cb-selection-banner">載入中...</div>
+            ) : classrooms.length === 0 ? (
               <div className="cb-selection-banner">目前尚未設定任何教室。</div>
             ) : (
               <div className="cb-table-wrap">
@@ -310,9 +327,7 @@ export default function EditingClassroom() {
                               <input
                                 type="checkbox"
                                 checked={!!c.has_projector}
-                                onChange={() =>
-                                  toggleEquip(c.room_code, "has_projector")
-                                }
+                                onChange={() => toggleEquip(c.room_code, "has_projector")}
                               />
                               有投影機
                             </label>
@@ -320,9 +335,7 @@ export default function EditingClassroom() {
                               <input
                                 type="checkbox"
                                 checked={!!c.has_whiteboard}
-                                onChange={() =>
-                                  toggleEquip(c.room_code, "has_whiteboard")
-                                }
+                                onChange={() => toggleEquip(c.room_code, "has_whiteboard")}
                               />
                               有白板
                             </label>
@@ -330,9 +343,7 @@ export default function EditingClassroom() {
                               <input
                                 type="checkbox"
                                 checked={!!c.has_network}
-                                onChange={() =>
-                                  toggleEquip(c.room_code, "has_network")
-                                }
+                                onChange={() => toggleEquip(c.room_code, "has_network")}
                               />
                               有網路
                             </label>
@@ -340,20 +351,14 @@ export default function EditingClassroom() {
                               <input
                                 type="checkbox"
                                 checked={!!c.has_mic}
-                                onChange={() =>
-                                  toggleEquip(c.room_code, "has_mic")
-                                }
+                                onChange={() => toggleEquip(c.room_code, "has_mic")}
                               />
                               有麥克風
                             </label>
                           </div>
                         </td>
                         <td>
-                          <button
-                            className="cb-btn"
-                            disabled={saving}
-                            onClick={() => handleSaveClassroom(c)}
-                          >
+                          <button className="cb-btn" disabled={saving} onClick={() => handleSaveClassroom(c)}>
                             儲存設定
                           </button>
                           <button
@@ -424,11 +429,11 @@ export default function EditingClassroom() {
                 <label className="form-label">設備</label>
                 <div className="equip-grid">
                   {[
-                    { key: 'has_projector', label: '投影機' },
-                    { key: 'has_whiteboard', label: '白板' },
-                    { key: 'has_network', label: '網路' },
-                    { key: 'has_mic', label: '麥克風' },
-                  ].map(item => (
+                    { key: "has_projector", label: "投影機" },
+                    { key: "has_whiteboard", label: "白板" },
+                    { key: "has_network", label: "網路" },
+                    { key: "has_mic", label: "麥克風" },
+                  ].map((item) => (
                     <label key={item.key} className="equip-check">
                       <input
                         type="checkbox"
@@ -448,11 +453,7 @@ export default function EditingClassroom() {
 
               {/* ----- 按鈕 ----- */}
               <div className="form-actions">
-                <button
-                  className="cb-btn"
-                  disabled={saving}
-                  onClick={handleCreate}
-                >
+                <button className="cb-btn" disabled={saving} onClick={handleCreate}>
                   {saving ? "新增中..." : "確認新增教室"}
                 </button>
               </div>

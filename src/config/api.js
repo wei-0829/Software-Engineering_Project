@@ -25,7 +25,12 @@ export const API_ENDPOINTS = {
   // 🔥🔥 黑名單功能新增 ↓↓↓
   users: () => `${API_BASE_URL}/api/accounts/users/`,
   userDetail: (id) => `${API_BASE_URL}/api/accounts/users/${id}/`,
-  //更改使用者資料
+  // 黑名單相關
+  blacklistCheck: () => `${API_BASE_URL}/api/blacklist/check/`,
+  blacklistUsers: () => `${API_BASE_URL}/api/blacklist/users/`,
+  banUser: () => `${API_BASE_URL}/api/blacklist/ban/`,
+  unbanUser: () => `${API_BASE_URL}/api/blacklist/unban/`,
+  // 更改使用者資料
   change_name: () => `${API_BASE_URL}/api/auth/change_name/`,
   change_password: () => `${API_BASE_URL}/api/auth/change_password/`,
 };
