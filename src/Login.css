@@ -1,14 +1,33 @@
+/* =========================
+   Global Fix
+   ========================= */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html, body {
+  overflow-x: hidden; /* 防止任何意外水平溢出造成右邊跑出去 */
+}
+
 /* ===== Login Page ===== */
 .login-page {
   min-height: 100vh;
   background: #f3f6fb;
   display: flex;
   flex-direction: column;
+  overflow-x: hidden; /* 再保險一次 */
 }
 
+/* ===== Topbar ===== */
 .login-topbar {
   height: 64px;
-  background: linear-gradient(180deg, #39a3ff 0%, #29b0ff 40%, #27b9ff 65%, #2fc0ff 100%);
+  background: linear-gradient(
+    180deg,
+    #39a3ff 0%,
+    #29b0ff 40%,
+    #27b9ff 65%,
+    #2fc0ff 100%
+  );
   color: #fff;
   padding: 0 24px;
   display: flex;
@@ -23,7 +42,7 @@
   line-height: 1.1;
 }
 
-/* 內容容器：中間置中 + 有邊距 */
+/* ===== 外層容器 ===== */
 .login-container {
   padding: 24px;
   display: flex;
@@ -32,7 +51,7 @@
   width: 100%;
 }
 
-/* Panel：核心響應式寬度設定 */
+/* ===== 主 Panel ===== */
 .login-panel {
   background: #fff;
   border: 1px solid #e5e7eb;
@@ -44,12 +63,19 @@
   grid-template-columns: 1.2fr 0.8fr;
   gap: 16px;
 
-  /* ✅ 不要用 width:40%（手機會爆、桌機會太窄）
-     改成：最大寬度 + 自動縮放 */
-  width: min(920px, 92vw);
+  width: 100%;
+  max-width: 920px;
   margin: 0 auto;
+
+  min-width: 0; /* ✅ Grid item 可縮，避免內容撐爆 */
 }
 
+.login-left,
+.login-right {
+  min-width: 0; /* ✅ 允許內部內容縮小 */
+}
+
+/* ===== 左側登入區 ===== */
 .login-left {
   padding: 8px 12px 16px;
 }
@@ -60,10 +86,17 @@
   font-weight: 800;
 }
 
+/* ===== 表單 ===== */
 .login-form {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  min-width: 0;
+}
+
+.login-form * {
+  max-width: 100%;
+  min-width: 0; /* ✅ 對 flex item 超重要，避免 input/按鈕撐爆 */
 }
 
 .login-label {
@@ -77,7 +110,8 @@
   font-size: 15px;
   outline: none;
   width: 100%;
-  box-sizing: border-box;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .login-input:focus {
@@ -85,15 +119,52 @@
   border-color: #60a5fa;
 }
 
-/* ✅ reCAPTCHA：預設桌機正常，手機會縮放 */
-.login-captcha-wrap {
-  margin-top: 8px;
-  margin-bottom: 8px;
+/* ===== ✅ 修溢出：表單的「一排 input + button」===== */
+.login-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
   width: 100%;
-  overflow: hidden; /* 防止溢出 */
+  min-width: 0;
 }
 
-/* 右側選單 */
+.login-input--row {
+  flex: 1 1 auto;
+  min-width: 0; /* ✅ 關鍵：讓 input 在 row 裡能縮 */
+}
+
+.login-row-btn {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* ===== 表單底部按鈕區 ===== */
+.login-actions {
+  display: flex;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.login-actions--row {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.login-actions--row > * {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ===== reCAPTCHA ===== */
+.login-captcha-wrap {
+  margin: 8px 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* ===== 右側連結區 ===== */
 .login-right {
   border-left: 1px solid #e5e7eb;
   padding: 8px 12px 16px 18px;
@@ -103,7 +174,6 @@
   justify-content: center;
 }
 
-/* ✅ login-link 統一只留這一份（你原本重複了） */
 .login-link {
   display: block;
   padding: 10px 12px;
@@ -116,11 +186,18 @@
   cursor: pointer;
   user-select: none;
 
-  font-family: "Microsoft JhengHei", "Noto Sans TC", system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-family: "Microsoft JhengHei", "Noto Sans TC",
+    system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   font-size: 16px;
   font-weight: 650;
 
   transition: transform 0.08s ease, background 0.15s ease;
+
+  max-width: 100%;
+  min-width: 0; /* ✅ 長字可縮避免撐爆 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .login-link:hover {
@@ -131,15 +208,15 @@
   transform: scale(0.98);
 }
 
-/* 讓 a.login-link 維持同外觀 */
 a.login-link {
   text-decoration: none;
 }
 
-/* Notes：跟 panel 同寬 */
+/* ===== Notes ===== */
 .login-notes {
   font-size: 16px;
-  width: min(920px, 92vw);
+  width: 100%;
+  max-width: 920px;
   margin: 0 auto;
 
   background: #fff;
@@ -157,28 +234,11 @@ a.login-link {
 }
 
 /* =========================
-   ✅ Responsive Breakpoints
+   Responsive
    ========================= */
 
-/* 平板以下：稍微縮字、增加容器利用率 */
-@media (max-width: 900px) {
-  .login-topbar {
-    padding: 0 16px;
-  }
-  .login-panel {
-    width: min(720px, 94vw);
-  }
-  .login-notes {
-    width: min(720px, 94vw);
-    font-size: 15px;
-  }
-  .login-link {
-    font-size: 15px;
-  }
-}
-
-/* 手機：改成上下排列 + 右側變成「一排」選單 */
-@media (max-width: 600px) {
+/* 手機 */
+@media (max-width: 650px) {
   .login-container {
     padding: 14px;
   }
@@ -187,24 +247,27 @@ a.login-link {
     grid-template-columns: 1fr;
     gap: 12px;
     padding: 14px;
-    width: 96vw;
+    max-width: none;
   }
 
+  /* ✅ 手機：右側按鈕 2 顆一排，自動換行，且不會溢出 */
   .login-right {
     border-left: none;
     border-top: 1px solid #e5e7eb;
     padding: 12px 0 0;
+
     flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
     justify-content: space-between;
-    gap: 8px;
+
+    min-width: 0;
   }
 
-  /* 三個按鈕平均 */
   .login-link {
-    flex: 1;
-    padding: 10px 8px;
-    font-size: 14px;
-    border-radius: 10px;
+    flex: 1 1 calc(50% - 10px);
+    min-width: 0;
+    max-width: 100%;
   }
 
   .login-title {
@@ -212,20 +275,88 @@ a.login-link {
   }
 
   .login-notes {
-    width: 96vw;
+    max-width: none;
     font-size: 14px;
   }
 
-  /* ✅ reCAPTCHA 手機縮放：避免爆版 */
+  /* ✅ 手機：註冊/忘記密碼那排 input+button 改成上下，100% 不溢出 */
+  .login-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-row-btn {
+    width: 100%;
+  }
+
+  /* ✅ form-actions 兩顆按鈕在手機平均 */
+  .login-actions--row > * {
+    flex: 1 1 calc(50% - 8px);
+  }
+
+  /* reCAPTCHA 縮放 */
   .login-captcha-wrap > div {
     transform: scale(0.88);
     transform-origin: left top;
   }
 }
 
-/* 超小手機：更縮一點 captcha */
-@media (max-width: 380px) {
+/* 超小手機 */
+@media (max-width: 400px) {
   .login-captcha-wrap > div {
     transform: scale(0.82);
+  }
+
+  /* 超小手機：右側按鈕改成一顆一排更穩 */
+  .login-link {
+    flex: 1 1 100%;
+  }
+}
+
+/* =========================
+   reCAPTCHA v2 (checkbox) responsive fix
+   ========================= */
+
+/* 外層包住：避免水平溢出、讓內容保持在 panel 內 */
+.login-captcha-wrap{
+  width: 100%;
+  overflow: hidden;
+  max-width: 100%;
+}
+
+/* reCAPTCHA 生成的容器（React 版通常會插一層 div） */
+.login-captcha-wrap > div{
+  max-width: 100%;
+}
+
+/* 預設（桌機/一般寬度）不縮放 */
+.login-captcha-wrap{
+  /* reCAPTCHA v2 固定高度約 78px，預留即可 */
+  min-height: 78px;
+}
+
+/* 手機：用 scale 縮小（v2 唯一能做的方式） */
+@media (max-width: 650px){
+  .login-captcha-wrap{
+    /* 高度要跟著縮放後調整，避免下方被裁切 */
+    min-height: calc(78px * 0.88);
+  }
+
+  /* 盡量縮放「裡面那層」 */
+  .login-captcha-wrap > div{
+    transform: scale(0.88);
+    transform-origin: left top;
+  }
+}
+
+/* 超小手機：再縮 */
+@media (max-width: 400px){
+  .login-captcha-wrap{
+    min-height: calc(78px * 0.82);
+  }
+
+  .login-captcha-wrap > div{
+    transform: scale(0.82);
+    transform-origin: left top;
   }
 }

@@ -154,18 +154,6 @@
 .bl-arrow-green:hover {
   background: #059669;
 }
-@media (max-width: 768px) {
-  .bl-columns {
-    flex-direction: column;
-  }
-
-  .bl-arrows {
-    display: none;
-  }
-}
-.cb-table-wrap {
-  overflow-x: auto;
-}
 
 /* =========================
    Blacklist Responsive + Footer safe
