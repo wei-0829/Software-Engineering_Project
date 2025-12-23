@@ -331,7 +331,7 @@
 }
 
 /* 4) 手機：表格改「卡片式」呈現（避免爆版最有效） */
-@media (max-width: 768px) {
+@media (max-width: 840px) {
   /* 表格區改成 card list */
   .cb-table-wrap {
     overflow: visible; /* 由卡片呈現，不需要橫捲 */
