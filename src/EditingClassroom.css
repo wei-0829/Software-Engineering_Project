@@ -170,27 +170,6 @@
   margin-top: 8px;
 }
 
-/* ========= 手機版 ========= */
-@media (max-width: 768px) {
-  .add-form-grid {
-    grid-template-columns: 1fr 1fr; /* 手機版變兩欄 */
-  }
-
-  .cb-table {
-    font-size: 16px;
-  }
-
-  .cb-input-inline {
-    width: 100px;
-    font-size: 16px;
-  }
-
-  .cb-equip-cell,
-  .cb-equip-grid {
-    grid-template-columns: 1fr; /* 小螢幕改成一行一個，比較好點 */
-  }
-}
-
 /* ========= 頁面下方粗藍色貼底 Banner（固定版） ========= */
 
 .editing-footer {

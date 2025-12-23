@@ -17,6 +17,7 @@ export default function Login() {
   const [account, setAccount] = useState("");
   const [password, setPassword] = useState("");
   const [verifyCooldown, setVerifyCooldown] = useState(0);
+
   const [Logging, setLogging] = useState(false);
   const [sendOtpCode, setSendOtpCode] = useState(false);
   const [Registering, setRegistering] = useState(false);
@@ -51,7 +52,6 @@ export default function Login() {
   const onSubmitLogin = async (e) => {
     e.preventDefault();
 
-    // ✅ 必須先通過 reCAPTCHA
     if (!captchaToken) {
       alert("請先完成『我不是機器人』驗證");
       return;
@@ -61,10 +61,7 @@ export default function Login() {
     try {
       const res = await fetch(API_ENDPOINTS.login(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        // ✅ 多送 recaptcha_token 給後端
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ account, password, recaptcha_token: captchaToken }),
       });
 
@@ -72,23 +69,19 @@ export default function Login() {
         const { detail } = await res.json().catch(() => ({}));
         alert(detail || "登入失敗，請確認帳號密碼");
 
-        // ✅ 失敗就 reset，避免 token 過期/重放
         recaptchaRef.current?.reset();
         setCaptchaToken(null);
         return;
       }
 
       const data = await res.json();
-      console.log("login success:", data);
 
       localStorage.setItem("access_token", data.access);
       localStorage.setItem("refresh_token", data.refresh);
-      localStorage.setItem("name", data.user.name);
+      localStorage.setItem("name", data.user?.name ?? "");
       localStorage.setItem("username", account);
 
-      // ✅ 登入成功彈窗
       alert("登入成功！");
-
       navigate("/");
     } catch (err) {
       console.error(err);
@@ -104,19 +97,18 @@ export default function Login() {
   const onSubmitRegister = async (e) => {
     e.preventDefault();
     setRegistering(true);
-    const form = e.target;
+
+    const form = e.currentTarget;
     const name = form.elements["name"].value;
-    const account = form.elements["account"].value;
-    const password = form.elements["password"].value;
+    const acc = form.elements["account"].value;
+    const pwd = form.elements["password"].value;
     const code = form.elements["code"]?.value;
 
     try {
       const res = await fetch(API_ENDPOINTS.register(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name, account, password, code }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, account: acc, password: pwd, code }),
       });
 
       if (!res.ok) {
@@ -137,9 +129,9 @@ export default function Login() {
 
   const onSubmitValidation = async (accountValue) => {
     setSendOtpCode(true);
-    const account = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
+    const acc = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
-    if (!account) {
+    if (!acc) {
       alert("請先輸入使用者名稱與學校帳號");
       setSendOtpCode(false);
       return;
@@ -149,17 +141,16 @@ export default function Login() {
       const res = await fetch(API_ENDPOINTS.send_verification_email(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account }),
+        body: JSON.stringify({ account: acc }),
       });
 
       if (!res.ok) {
         const { detail } = await res.json().catch(() => ({}));
         alert(detail || "驗證碼寄送失敗，請稍後再試");
-        if (detail === "嘗試次數過多，請重新寄送驗證碼") {
-          setVerifyCooldown(0);
-        }
+        if (detail === "嘗試次數過多，請重新寄送驗證碼") setVerifyCooldown(0);
         return;
       }
+
       setVerifyCooldown(300);
       alert("驗證碼已寄出，請到信箱查收");
     } catch (err) {
@@ -175,9 +166,9 @@ export default function Login() {
      ----------------------------- */
   const onSubmitForgot = async (accountValue) => {
     setSendOtpCode(true);
-    const account = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
+    const acc = (accountValue ?? registerAccountRef.current?.value ?? "").trim();
 
-    if (!account) {
+    if (!acc) {
       alert("請先輸入使用者名稱與學校帳號");
       setSendOtpCode(false);
       return;
@@ -187,7 +178,7 @@ export default function Login() {
       const res = await fetch(API_ENDPOINTS.send_change_pwd(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ account }),
+        body: JSON.stringify({ account: acc }),
       });
 
       if (!res.ok) {
@@ -208,18 +199,19 @@ export default function Login() {
   const onSubmitNewPassword = async (e) => {
     e.preventDefault();
     setChangingPassword(true);
-    const form = e.target;
-    const account = form.elements["account"].value;
-    const password = form.elements["password"].value;
-    const password_check = form.elements["password_check"].value;
+
+    const form = e.currentTarget;
+    const acc = form.elements["account"].value;
+    const pwd = form.elements["password"].value;
+    const pwd2 = form.elements["password_check"].value;
     const code = form.elements["code"].value;
 
-    if (!account || !password || !code) {
+    if (!acc || !pwd || !code) {
       alert("請填寫帳號、驗證碼、新密碼");
       setChangingPassword(false);
       return;
     }
-    if (password !== password_check) {
+    if (pwd !== pwd2) {
       alert("兩次輸入密碼不同");
       setChangingPassword(false);
       return;
@@ -228,18 +220,14 @@ export default function Login() {
     try {
       const res = await fetch(API_ENDPOINTS.verify_change_pwd(), {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ account, password, code }),
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ account: acc, password: pwd, code }),
       });
 
       if (!res.ok) {
         const { detail } = await res.json().catch(() => ({}));
         alert(detail || "更改密碼失敗，請確認輸入是否正確");
-        if (detail?.includes("嘗試次數過多") || detail?.includes("過期")) {
-          setVerifyCooldown(0);
-        }
+        if (detail?.includes("嘗試次數過多") || detail?.includes("過期")) setVerifyCooldown(0);
         return;
       }
 
@@ -267,9 +255,9 @@ export default function Login() {
 
       <main className="login-container">
         <div className="login-panel">
-          {/* 左側表單區域 */}
+          {/* 左側表單 */}
           <section className="login-left">
-            {/* Login 表單 */}
+            {/* Login */}
             {view === "login" && (
               <>
                 <h2 className="login-title">登入 Portal</h2>
@@ -294,7 +282,6 @@ export default function Login() {
                     required
                   />
 
-                  {/* ✅ reCAPTCHA */}
                   <div className="login-captcha-wrap">
                     <ReCAPTCHA
                       ref={recaptchaRef}
@@ -304,19 +291,16 @@ export default function Login() {
                     />
                   </div>
 
-                  <button
-                    type="submit"
-                    className="cb-btn"
-                    style={{ alignSelf: "flex-start" }}
-                    disabled={Logging}
-                  >
-                    登入
-                  </button>
+                  <div className="login-actions">
+                    <button type="submit" className="cb-btn" disabled={Logging}>
+                      登入
+                    </button>
+                  </div>
                 </form>
               </>
             )}
 
-            {/* Register 表單 */}
+            {/* Register */}
             {view === "register" && (
               <>
                 <h2 className="login-title">註冊新帳號</h2>
@@ -333,9 +317,9 @@ export default function Login() {
                   />
 
                   <label className="login-label">學校帳號</label>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div className="login-row">
                     <input
-                      className="login-input"
+                      className="login-input login-input--row"
                       type="text"
                       name="account"
                       ref={registerAccountRef}
@@ -344,47 +328,22 @@ export default function Login() {
                       required
                     />
                     <button
-                      id="validationbtn"
                       type="button"
-                      className="cb-btn ghost"
-                      onClick={() =>
-                        onSubmitValidation(registerAccountRef.current?.value, registerNameRef.current?.value)
-                      }
+                      className="cb-btn ghost login-row-btn"
+                      onClick={() => onSubmitValidation(registerAccountRef.current?.value)}
                       disabled={verifyCooldown > 0 || sendOtpCode}
-                      style={
-                        verifyCooldown > 0
-                          ? {
-                              backgroundColor: "#ccc",
-                              color: "#555",
-                              borderColor: "#aaa",
-                            }
-                          : undefined
-                      }
                     >
                       {verifyCooldown > 0 ? `${verifyCooldown}s` : "發送驗證碼"}
                     </button>
                   </div>
 
                   <label className="login-label">密碼</label>
-                  <input
-                    className="login-input"
-                    type="password"
-                    name="password"
-                    placeholder="請輸入密碼"
-                    required
-                  />
+                  <input className="login-input" type="password" name="password" placeholder="請輸入密碼" required />
 
                   <label className="login-label">驗證碼</label>
-                  <input
-                    className="login-input"
-                    type="text"
-                    name="code"
-                    placeholder="請輸入驗證碼"
-                    required
-                    style={{ flex: 1 }}
-                  />
+                  <input className="login-input" type="text" name="code" placeholder="請輸入驗證碼" required />
 
-                  <div className="form-actions" style={{ display: "flex", gap: 8 }}>
+                  <div className="login-actions login-actions--row">
                     <button type="button" className="cb-btn ghost" onClick={() => setView("login")}>
                       返回登入
                     </button>
@@ -396,15 +355,16 @@ export default function Login() {
               </>
             )}
 
-            {/* Forgot Password 表單 */}
+            {/* Forgot */}
             {view === "forgot" && (
               <>
                 <h2 className="login-title">忘記密碼</h2>
+
                 <form className="login-form" onSubmit={onSubmitNewPassword}>
                   <label className="login-label">輸入學校帳號</label>
-                  <div style={{ display: "flex", gap: 8 }}>
+                  <div className="login-row">
                     <input
-                      className="login-input"
+                      className="login-input login-input--row"
                       type="text"
                       name="account"
                       ref={registerAccountRef}
@@ -413,38 +373,17 @@ export default function Login() {
                       required
                     />
                     <button
-                      id="validationbtn"
                       type="button"
-                      className="cb-btn ghost"
-                      onClick={() =>
-                        onSubmitForgot(registerAccountRef.current?.value, registerNameRef.current?.value)
-                      }
+                      className="cb-btn ghost login-row-btn"
+                      onClick={() => onSubmitForgot(registerAccountRef.current?.value)}
                       disabled={verifyCooldown > 0 || sendOtpCode}
-                      style={
-                        verifyCooldown > 0
-                          ? {
-                              backgroundColor: "#ccc",
-                              color: "#555",
-                              borderColor: "#aaa",
-                            }
-                          : undefined
-                      }
                     >
                       {verifyCooldown > 0 ? `${verifyCooldown}s` : "發送驗證碼"}
                     </button>
                   </div>
 
                   <label className="login-label">驗證碼</label>
-                  <div style={{ display: "flex", gap: 8 }}>
-                    <input
-                      className="login-input"
-                      type="text"
-                      name="code"
-                      placeholder="請輸入驗證碼"
-                      required
-                      style={{ flex: 1 }}
-                    />
-                  </div>
+                  <input className="login-input" type="text" name="code" placeholder="請輸入驗證碼" required />
 
                   <label className="login-label">新密碼</label>
                   <input className="login-input" type="password" name="password" placeholder="請輸入新密碼" required />
@@ -458,7 +397,7 @@ export default function Login() {
                     required
                   />
 
-                  <div className="form-actions" style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                  <div className="login-actions login-actions--row">
                     <button type="button" className="cb-btn ghost" onClick={() => setView("login")}>
                       返回登入
                     </button>
@@ -483,6 +422,7 @@ export default function Login() {
             >
               忘記密碼
             </button>
+
             <button
               type="button"
               className="login-link"
@@ -493,6 +433,7 @@ export default function Login() {
             >
               註冊新帳號
             </button>
+
             <a className="login-link" href="https://www.ntou.edu.tw/" target="_blank" rel="noopener noreferrer">
               國立臺灣海洋大學
             </a>
