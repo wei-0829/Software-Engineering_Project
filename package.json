@@ -4,7 +4,9 @@
   "description": "海大教室借用平台",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview"
@@ -27,7 +29,14 @@
     "react-router-dom": "^7.9.5"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.1.5",
+    "@testing-library/react": "^15.0.0",
+    "@testing-library/user-event": "^14.5.1",
     "@vitejs/plugin-react": "^5.1.1",
-    "vite": "^7.2.2"
+    "@vitest/coverage-v8": "^1.1.0",
+    "@vitest/ui": "^1.1.0",
+    "jsdom": "^23.0.1",
+    "vite": "^7.2.2",
+    "vitest": "^1.1.0"
   }
 }
