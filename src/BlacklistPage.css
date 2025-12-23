@@ -311,7 +311,7 @@
 }
 
 /* ===== 手機：表格變卡片（最重要） ===== */
-@media (max-width: 768px) {
+@media (max-width: 840px) {
   /* 卡片寬度更滿 */
   .cb-card {
     width: min(980px, 94%);
