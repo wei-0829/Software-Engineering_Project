@@ -161,7 +161,8 @@ html, body {
 .login-captcha-wrap {
   margin: 8px 0;
   width: 100%;
-  overflow: hidden;
+  display: flex;
+  justify-content: flex-start;
 }
 
 /* ===== 右側連結區 ===== */
@@ -293,70 +294,57 @@ a.login-link {
   .login-actions--row > * {
     flex: 1 1 calc(50% - 8px);
   }
-
-  /* reCAPTCHA 縮放 */
-  .login-captcha-wrap > div {
-    transform: scale(0.88);
-    transform-origin: left top;
-  }
 }
 
 /* 超小手機 */
 @media (max-width: 400px) {
-  .login-captcha-wrap > div {
-    transform: scale(0.82);
-  }
 
   /* 超小手機：右側按鈕改成一顆一排更穩 */
   .login-link {
     flex: 1 1 100%;
   }
-}
 
-/* =========================
-   reCAPTCHA v2 (checkbox) responsive fix
-   ========================= */
-
-/* 外層包住：避免水平溢出、讓內容保持在 panel 內 */
-.login-captcha-wrap{
-  width: 100%;
-  overflow: hidden;
-  max-width: 100%;
-}
-
-/* reCAPTCHA 生成的容器（React 版通常會插一層 div） */
-.login-captcha-wrap > div{
-  max-width: 100%;
-}
-
-/* 預設（桌機/一般寬度）不縮放 */
-.login-captcha-wrap{
-  /* reCAPTCHA v2 固定高度約 78px，預留即可 */
-  min-height: 78px;
-}
-
-/* 手機：用 scale 縮小（v2 唯一能做的方式） */
-@media (max-width: 650px){
-  .login-captcha-wrap{
-    /* 高度要跟著縮放後調整，避免下方被裁切 */
-    min-height: calc(78px * 0.88);
+  .login-container {
+    padding: 8px;
   }
 
-  /* 盡量縮放「裡面那層」 */
-  .login-captcha-wrap > div{
-    transform: scale(0.88);
-    transform-origin: left top;
-  }
-}
-
-/* 超小手機：再縮 */
-@media (max-width: 400px){
-  .login-captcha-wrap{
-    min-height: calc(78px * 0.82);
+  .login-panel {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    padding: 0px;
+    max-width: none;
   }
 
-  .login-captcha-wrap > div{
-    transform: scale(0.82);
-    transform-origin: left top;
+  /* ✅ 手機：右側按鈕 2 顆一排，自動換行，且不會溢出 */
+  .login-right {
+    border-left: none;
+    border-top: 1px solid #e5e7eb;
+    padding: 16px;
+
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: space-between;
+
+    min-width: 0;
+  }
+
+  .login-title {
+    font-size: 18px;
+  }
+
+  .login-notes {
+    max-width: none;
+    font-size: 14px;
+  }
+
+  /* ✅ 手機：註冊/忘記密碼那排 input+button 改成上下，100% 不溢出 */
+  .login-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .login-row-btn {
+    width: 100%;
   }
 }
