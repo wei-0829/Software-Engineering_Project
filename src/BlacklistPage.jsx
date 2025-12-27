@@ -225,7 +225,7 @@ export default function Blacklist() {
                       <thead>
                         <tr>
                           <th>使用者名稱</th>
-                          <th>學號 / 帳號</th>
+                          <th>帳號</th>
                           <th>信箱</th>
                           <th>操作</th>
                         </tr>
