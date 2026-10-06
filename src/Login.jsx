@@ -253,7 +253,27 @@ export default function Login() {
         </button>
       </header>
 
-      <main className="login-container">
+      <main className={`login-container${view === "login" ? " login-container--demo" : ""}`}>
+        <div className={`login-layout${view === "login" ? " login-layout--demo" : ""}`}>
+          {view === "login" && (
+            <aside className="login-demo" aria-labelledby="login-demo-title">
+              <span className="login-demo-badge">作品展示</span>
+              <h2 id="login-demo-title">教授測試帳號</h2>
+              <p className="login-demo-description">使用以下帳號登入，體驗教室預約功能。</p>
+              <table className="login-demo-table">
+                <tbody>
+                  <tr>
+                    <th scope="row">測試帳號</th>
+                    <td><code>SE</code></td>
+                  </tr>
+                  <tr>
+                    <th scope="row">測試密碼</th>
+                    <td><code>00000000</code></td>
+                  </tr>
+                </tbody>
+              </table>
+            </aside>
+          )}
         <div className="login-panel">
           {/* 左側表單 */}
           <section className="login-left">
@@ -438,6 +458,7 @@ export default function Login() {
               國立臺灣海洋大學
             </a>
           </aside>
+        </div>
         </div>
 
         <section className="login-notes">
