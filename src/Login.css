@@ -60,53 +60,109 @@ html, body {
 
 .login-layout--demo {
   display: grid;
-  grid-template-columns: 250px minmax(0, 920px);
-  gap: 20px;
-  max-width: 1190px;
-  align-items: start;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 0;
+  max-width: 1100px;
+  align-items: stretch;
+  background: #fff;
+  border: 1px solid #e1e8f2;
+  border-radius: 18px;
+  overflow: hidden;
+  box-shadow: 0 16px 40px rgba(28, 58, 94, 0.08);
 }
 
 .login-demo {
-  padding: 20px;
-  background: #fff;
-  border: 1px solid #dbe4f0;
-  border-radius: 12px;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+  padding: 36px 28px;
+  background: linear-gradient(145deg, #eaf4ff, #f5f9ff);
+  border-right: 1px solid #e1e8f2;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.login-demo-badge {
+  align-self: flex-start;
+  padding: 5px 10px;
+  margin-bottom: 16px;
+  border-radius: 6px;
+  background: #dcecff;
+  color: #275cb3;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
 }
 
 .login-demo h2 {
-  margin: 0 0 16px;
-  font-size: 18px;
+  margin: 0 0 10px;
+  font-size: 22px;
   color: #174a8b;
+}
+
+.login-demo-description {
+  margin: 0 0 24px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: #5d708a;
 }
 
 .login-demo-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: #fff;
+  border: 1px solid #dce6f3;
+  border-radius: 10px;
+  overflow: hidden;
   font-size: 14px;
 }
 
 .login-demo-table th,
 .login-demo-table td {
-  padding: 12px 8px;
-  border: 1px solid #dbe4f0;
+  padding: 16px 12px;
   text-align: left;
 }
 
+.login-demo-table tr + tr > * {
+  border-top: 1px solid #e8eef6;
+}
+
 .login-demo-table th {
-  background: #f0f6ff;
-  font-weight: 700;
+  color: #63748b;
+  font-weight: 500;
   white-space: nowrap;
 }
 
 .login-demo-table code {
   font-size: 15px;
-  color: #111827;
+  font-family: inherit;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: #173b68;
+}
+
+.login-layout--demo .login-panel {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+  padding: 24px 20px;
+}
+
+.login-container--demo .login-notes {
+  max-width: 1100px;
 }
 
 @media (max-width: 1050px) {
   .login-layout--demo {
     grid-template-columns: minmax(0, 1fr);
+    max-width: 920px;
+  }
+  .login-demo {
+    border-right: 0;
+    border-bottom: 1px solid #e1e8f2;
+    padding: 24px;
+  }
+  .login-container--demo .login-notes {
     max-width: 920px;
   }
 }
