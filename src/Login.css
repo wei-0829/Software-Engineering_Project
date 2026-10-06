@@ -52,6 +52,65 @@ html, body {
 }
 
 /* ===== 主 Panel ===== */
+.login-layout {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+}
+
+.login-layout--demo {
+  display: grid;
+  grid-template-columns: 250px minmax(0, 920px);
+  gap: 20px;
+  max-width: 1190px;
+  align-items: start;
+}
+
+.login-demo {
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #dbe4f0;
+  border-radius: 12px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+.login-demo h2 {
+  margin: 0 0 16px;
+  font-size: 18px;
+  color: #174a8b;
+}
+
+.login-demo-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.login-demo-table th,
+.login-demo-table td {
+  padding: 12px 8px;
+  border: 1px solid #dbe4f0;
+  text-align: left;
+}
+
+.login-demo-table th {
+  background: #f0f6ff;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.login-demo-table code {
+  font-size: 15px;
+  color: #111827;
+}
+
+@media (max-width: 1050px) {
+  .login-layout--demo {
+    grid-template-columns: minmax(0, 1fr);
+    max-width: 920px;
+  }
+}
+
 .login-panel {
   background: #fff;
   border: 1px solid #e5e7eb;
