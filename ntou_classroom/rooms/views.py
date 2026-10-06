@@ -5,9 +5,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAdminUser
 from rest_framework.pagination import PageNumberPagination
 from django.db.models import Q, Count
-from django.core.cache import cache
-from django.utils.decorators import method_decorator
-from django.views.decorators.cache import cache_page
 from .models import Classroom
 from .serializers import ClassroomSerializer, ClassroomListSerializer, BuildingSerializer
 
@@ -114,7 +111,6 @@ class ClassroomViewSet(viewsets.ModelViewSet):
         return queryset
     
     @action(detail=False, methods=['get'], url_path='buildings')
-    @method_decorator(cache_page(60 * 15))  # 快取 15 分鐘
     def buildings(self, request):
         """
         GET /api/rooms/classrooms/buildings/
@@ -131,33 +127,19 @@ class ClassroomViewSet(viewsets.ModelViewSet):
             ...
         ]
         """
-        # 嘗試從快取取得
-        cache_key = 'buildings_list'
-        buildings_data = cache.get(cache_key)
-        
-        if buildings_data is None:
-            # 用一次查詢取得所有大樓的教室數量（效能優化）
-            building_counts = dict(
-                Classroom.objects.filter(is_active=True)
-                .values('building')
-                .annotate(count=Count('id'))
-                .values_list('building', 'count')
-            )
-            
-            # 組合資料
-            buildings_data = []
-            for code, name in Classroom.BUILDINGS:
-                count = building_counts.get(code, 0)
-                if count > 0:  # 只回傳有教室的大樓
-                    buildings_data.append({
-                        'code': code,
-                        'name': name,
-                        'classroom_count': count
-                    })
-            
-            # 存入快取（15 分鐘）
-            cache.set(cache_key, buildings_data, 60 * 15)
-        
+        # Query current data so admin/API changes appear on the next request.
+        building_counts = dict(
+            Classroom.objects.filter(is_active=True)
+            .values('building')
+            .annotate(count=Count('id'))
+            .values_list('building', 'count')
+        )
+        buildings_data = [
+            {'code': code, 'name': name, 'classroom_count': building_counts[code]}
+            for code, name in Classroom.BUILDINGS
+            if building_counts.get(code, 0) > 0
+        ]
+
         serializer = BuildingSerializer(buildings_data, many=True)
         return Response(serializer.data)
     
