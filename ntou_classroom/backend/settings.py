@@ -113,8 +113,8 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "defaultdb",
         "USER": "avnadmin",
-        "PASSWORD": "AVNS_BHCgAUTb1pAtKnVpf8U",
-        "HOST": "mysql-238322ff-softwareengineering11401-9faa.g.aivencloud.com",
+        "PASSWORD": "AVNS_gdkdLxnlPC8NZdepaWD",
+        "HOST": "pg-333e5fee-softwareengineering11401-9faa.i.aivencloud.com",
         "PORT": "25779",
         "CONN_MAX_AGE": 60,
         "CONN_HEALTH_CHECKS": True,
@@ -128,7 +128,7 @@ DATABASES = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": "redis://default:Fs7K1DH7sqBaS48yd71AdWVZLfry7rH6@redis-10796.crce264.ap-east-1-1.ec2.cloud.redislabs.com:10796",
+        "LOCATION": "redis-15716.crce178.ap-east-1-1.ec2.cloud.redislabs.com",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         },
