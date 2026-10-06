@@ -113,14 +113,14 @@ DATABASES = {
         "ENGINE": "django.db.backends.mysql",
         "NAME": "defaultdb",
         "USER": "avnadmin",
-        "PASSWORD": "AVNS_gdkdLxnlPC8NZdepaWD",
-        "HOST": "pg-333e5fee-softwareengineering11401-9faa.i.aivencloud.com",
+        "PASSWORD": "AVNS_qIqNsJOEVzD41s87-K8",
+        "HOST": "mysql-3322fee1-softwareengineering11401-9faa.a.aivencloud.com",
         "PORT": "25779",
         "CONN_MAX_AGE": 60,
         "CONN_HEALTH_CHECKS": True,
         "OPTIONS": { 
             "charset": "utf8mb4",
-        },
+        }
     }
 }
 
